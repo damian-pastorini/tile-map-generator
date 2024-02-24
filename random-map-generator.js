@@ -4,11 +4,10 @@
  *
  */
 
-const { OptionsValidator } = require('./validator/options-validator');
-const fs = require('fs');
-const path = require('path');
-const { Grid, AStarFinder } = require('pathfinding');
-const { Logger, sc } = require('@reldens/utils');
+let { OptionsValidator } = require('./lib/validator/options-validator');
+let { PathFinder } = require('./lib/path-finder/path-finder');
+let { FileHandler } = require('./lib/files/file-handler');
+let { Logger, sc } = require('@reldens/utils');
 
 class RandomMapGenerator
 {
@@ -19,6 +18,8 @@ class RandomMapGenerator
         this.currentDate = (new Date()).toISOString().slice(0, 19).replace('T', '-').replace(/:/g, '-');
         this.defaultMapFileName = `random-map-v${this.version}-${this.currentDate}.json`;
         this.optionsValidator = new OptionsValidator();
+        this.pathFinder = new PathFinder();
+        this.fileHandler = new FileHandler();
         this.isReady = false;
         if(props && 0 < Object.keys(props).length){
             this.setOptions(props);
@@ -29,7 +30,11 @@ class RandomMapGenerator
     setOptions(options)
     {
         // required:
-        this.mapFileName = sc.get(options, 'mapFileName', path.join(__dirname, 'generated', this.defaultMapFileName));
+        this.mapFileName = sc.get(
+            options,
+            'mapFileName',
+            this.fileHandler.joinPaths(__dirname, 'generated', this.defaultMapFileName)
+        );
         this.tileSize = sc.get(options, 'tileSize', false);
         this.tilesheetPath = sc.get(options, 'tilesheetPath', false);
         this.imageHeight = sc.get(options, 'imageHeight', false);
@@ -93,7 +98,7 @@ class RandomMapGenerator
         let mapNextLayerId = layers.length + 1;
 
         // map template:
-        const map = {
+        let map = {
             backgroundcolor: this.mapBackgroundColor,
             compressionlevel: this.mapCompressionLevel,
             height: this.mapHeight,
@@ -121,16 +126,8 @@ class RandomMapGenerator
             }],
             layers
         };
-
         // save the map in a JSON file:
-        fs.writeFile(this.mapFileName, this.mapToJSON(map), 'utf8', (err) => {
-            if(err){
-                console.error('Error saving the map:', err);
-                return;
-            }
-            console.log('The map has been saved!');
-        });
-
+        this.fileHandler.writeFile(this.mapFileName, this.mapToJSON(map));
     }
 
     generateLayersList()
@@ -160,7 +157,7 @@ class RandomMapGenerator
 
     generateEmptyMap()
     {
-        const {mapWidth, mapHeight} = this.calculateMapSizeWithFreeSpace();
+        let {mapWidth, mapHeight} = this.calculateMapSizeWithFreeSpace();
         this.mapWidth = mapWidth;
         this.mapHeight = mapHeight;
         this.mapGrid = Array.from({length: mapHeight}, () => Array(mapWidth).fill(true));
@@ -203,12 +200,12 @@ class RandomMapGenerator
         let maxHeight = 0;
         // calculate total area required by elements, including free space:
         for(let elementType of Object.keys(elementsQuantity)){
-            const quantity = elementsQuantity[elementType];
+            let quantity = elementsQuantity[elementType];
             // assuming first layer represents size:
-            const element = layerElements[elementType][0];
+            let element = layerElements[elementType][0];
             let widthPlusFreeTiles = element.width + freeSpaceTilesQuantity * 2;
             let heightPlusFreeTiles = element.height + freeSpaceTilesQuantity * 2;
-            const elementArea = widthPlusFreeTiles * heightPlusFreeTiles * quantity;
+            let elementArea = widthPlusFreeTiles * heightPlusFreeTiles * quantity;
             totalArea += elementArea;
             // track max width and height for single largest element with free space:
             maxWidth = Math.max(maxWidth, widthPlusFreeTiles);
@@ -234,18 +231,7 @@ class RandomMapGenerator
                 if(!addedLayerNames.has(layer.name)){
                     // fill layer with empty tiles:
                     let layerData = Array(this.mapWidth * this.mapHeight).fill(0);
-                    this.additionalLayers.push({
-                        id: nextLayerId++,
-                        data: layerData,
-                        height: this.mapHeight,
-                        width: this.mapWidth,
-                        name: layer.name,
-                        type: 'tilelayer',
-                        visible: true,
-                        opacity: 1,
-                        x: 0,
-                        y: 0
-                    });
+                    this.additionalLayers.push(this.generateLayerWithData(layer.name, layerData, nextLayerId++));
                     // mark this layer name as added:
                     addedLayerNames.add(layer.name);
                 }
@@ -255,11 +241,11 @@ class RandomMapGenerator
 
     findRandomPosition(width, height)
     {
-        const maxTries = 100;
+        let maxTries = 100;
         let tries = 0;
         while (tries < maxTries){
-            const x = Math.floor(Math.random() * (this.mapGrid[0].length - width));
-            const y = Math.floor(Math.random() * (this.mapGrid.length - height));
+            let x = Math.floor(Math.random() * (this.mapGrid[0].length - width));
+            let y = Math.floor(Math.random() * (this.mapGrid.length - height));
             if(this.canPlaceElement(x, y, width, height)){
                 return { x, y };
             }
@@ -289,8 +275,8 @@ class RandomMapGenerator
         let layer = this.additionalLayers[layerIndex];
         for(let i = 0; i < elementData.height; i++){
             for(let j = 0; j < elementData.width; j++){
-                const tileIndex = i * elementData.width + j;
-                const mapIndex = (elementData.position.y + i) * this.mapWidth + (elementData.position.x + j);
+                let tileIndex = i * elementData.width + j;
+                let mapIndex = (elementData.position.y + i) * this.mapWidth + (elementData.position.x + j);
                 if(elementData.data[tileIndex] !== 0){
                     layer.data[mapIndex] = elementData.data[tileIndex];
                     this.mapGrid[elementData.position.y + i][elementData.position.x + j] = false;
@@ -304,10 +290,10 @@ class RandomMapGenerator
         this.generateAdditionalLayers();
         for(let elementType of Object.keys(this.elementsQuantity)){
             for(let q = 0; q < this.elementsQuantity[elementType]; q++){
-                const elementDataArray = this.layerElements[elementType];
+                let elementDataArray = this.layerElements[elementType];
                 // use the base layer to find a position:
-                const baseElementData = elementDataArray[0];
-                const position = this.findRandomPosition(baseElementData.width, baseElementData.height);
+                let baseElementData = elementDataArray[0];
+                let position = this.findRandomPosition(baseElementData.width, baseElementData.height);
                 if(position){
                     for(let elementData of elementDataArray){
                         elementData.position = position;
@@ -324,13 +310,12 @@ class RandomMapGenerator
     applyVariations()
     {
         this.groundVariationsLayerData = Array(this.mapWidth * this.mapHeight).fill(0);
-        const totalTiles = this.mapGrid.flat().filter(tile => tile === true).length;
-        const tilesToChange = Math.floor(totalTiles * (this.variableTilesPercentage / 100));
-
+        let totalTiles = this.mapGrid.flat().filter(tile => tile === true).length;
+        let tilesToChange = Math.floor(totalTiles * (this.variableTilesPercentage / 100));
         for(let i = 0, applied = 0; applied < tilesToChange && i < totalTiles * 2; i++){
-            const x = Math.floor(Math.random() * this.mapWidth);
-            const y = Math.floor(Math.random() * this.mapHeight);
-            const position = y * this.mapWidth + x;
+            let x = Math.floor(Math.random() * this.mapWidth);
+            let y = Math.floor(Math.random() * this.mapHeight);
+            let position = y * this.mapWidth + x;
 
             if(this.mapGrid[y][x]){
                 this.groundVariationsLayerData[position] = this.randomGroundTiles[
@@ -416,17 +401,17 @@ class RandomMapGenerator
     mergeLayersByTileValue(staticLayers, additionalLayers)
     {
         let combinedLayers = [...staticLayers, ...additionalLayers];
-        // Use a map to track merged layers by name.
+        // use a map to track merged layers by name:
         let mergedLayersByName = new Map();
 
         combinedLayers.forEach(layer => {
-            // If the layer has already been encountered, merge their data.
+            // if the layer has already been encountered, merge their data:
             if(mergedLayersByName.has(layer.name)){
                 let existingLayer = mergedLayersByName.get(layer.name);
-                // Merge data arrays, preferring non-zero values.
+                // merge data arrays, preferring non-zero values:
                 existingLayer.data = existingLayer.data.map((tile, index) => tile > 0 ? tile : layer.data[index]);
             } else {
-                // Clone the layer to avoid mutating the original objects.
+                // clone the layer to avoid mutating the original objects:
                 let clonedLayer = JSON.parse(JSON.stringify(layer));
                 mergedLayersByName.set(layer.name, clonedLayer);
             }
@@ -441,7 +426,7 @@ class RandomMapGenerator
         let tilesFound = []
         for(let y = 0; y < this.mapHeight; y++){
             for(let x = 0; x < this.mapWidth; x++){
-                const index = y * this.mapWidth + x;
+                let index = y * this.mapWidth + x;
                 if(layerData[index] === this.pathTile){
                     tilesFound.push({ x, y });
                 }
@@ -468,7 +453,7 @@ class RandomMapGenerator
             || this.mapHeight === pathTilePosition.y;
     }
 
-    getMovementDirection(previousPoint2, previousPoint1, point)
+    getMovementDirection(point, previousPoint1, previousPoint2)
     {
         // determine vertical direction from previousPoint2 to previousPoint1
         let verticalDirection = '';
@@ -543,8 +528,8 @@ class RandomMapGenerator
 
     replaceSequence(array, originalSequence, replaceSequence)
     {
-        const originalSeqArray = originalSequence.split(',').map(Number);
-        const replaceSeqArray = replaceSequence.split(',').map(Number);
+        let originalSeqArray = originalSequence.split(',').map(Number);
+        let replaceSeqArray = replaceSequence.split(',').map(Number);
         for(let i = 0; i <= array.length - originalSeqArray.length; i++){
             if(array.slice(i, i + originalSeqArray.length).every((value, index) => value === originalSeqArray[index])){
                 array.splice(i, originalSeqArray.length, ...replaceSeqArray);
@@ -590,16 +575,16 @@ class RandomMapGenerator
             if('path' !== layer.name){
                 continue;
             }
-            const pathTilePositions = this.findPathTilePositions(layer.data);
+            let pathTilePositions = this.findPathTilePositions(layer.data);
             for(let pathTilePosition of pathTilePositions){
                 if(this.isBorder(pathTilePosition)){
                     continue;
                 }
-                let path = this.findPath(this.mainPathStart, pathTilePosition, this.mapWidth, this.mapHeight, grid);
+                let path = this.pathFinder.findPath(this.mainPathStart, pathTilePosition, this.mapWidth, this.mapHeight, grid);
                 let previousPoint = false;
                 let pointIndex = 0;
                 for(let point of path){
-                    const indexPoint = point[1] * this.mapWidth + point[0];
+                    let indexPoint = point[1] * this.mapWidth + point[0];
                     this.pathLayerData[indexPoint] = this.pathTile; // mark the path
                     this.mapGrid[point[1]][point[0]] = false; // mark as occupied/not-walkable
                     this.applySurroundingPaths(point);
@@ -655,7 +640,7 @@ class RandomMapGenerator
 
     createPathfindingGrid()
     {
-        let grid = new Grid(this.mapWidth, this.mapHeight);
+        let grid = this.pathFinder.create(this.mapWidth, this.mapHeight);
         for(let layer of this.additionalLayers){
             let isCollisionsLayer = false;
             for(let collisionLayer of this.collisionLayersForPaths){
@@ -690,20 +675,13 @@ class RandomMapGenerator
         grid.setWalkableAt(c, r, false);
     }
 
-    findPath(start, end, mapWidth, mapHeight, grid)
-    {
-        let finder = new AStarFinder();
-        let gridClone = grid.clone();
-        return finder.findPath(start.x, start.y, end.x, end.y, gridClone);
-    }
-
     mapToJSON(map)
     {
         let jsonString = JSON.stringify(map, null, 4);
-        const dataPattern = /("data":\s*\[\n\s*)([\s\S]*?)(\n\s*\])/g;
+        let dataPattern = /("data":\s*\[\n\s*)([\s\S]*?)(\n\s*\])/g;
 
         return jsonString.replace(dataPattern, (match, start, dataArray, end) => {
-            const singleLineArray = dataArray.replace(/\s+/g, '');
+            let singleLineArray = dataArray.replace(/\s+/g, '');
             return `${start.trim()}${singleLineArray}${end.trim()}`;
         });
     }
