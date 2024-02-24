@@ -31,7 +31,11 @@ class RandomMapGenerator
     {
         // required:
         this.rootFolder = sc.get(options, 'rootFolder', __dirname);
-        this.generatedFolder = this.fileHandler.joinPaths(this.rootFolder, 'generated');
+        this.generatedFolder = sc.get(
+            options,
+            'generatedFolder',
+            this.fileHandler.joinPaths(this.rootFolder, 'generated')
+        );
         this.mapFileName = sc.get(
             options,
             'mapFileName',
