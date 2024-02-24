@@ -8,7 +8,7 @@ const { OptionsValidator } = require('./validator/options-validator');
 const fs = require('fs');
 const path = require('path');
 const { Grid, AStarFinder } = require('pathfinding');
-const { sc } = require('@reldens/utils');
+const { Logger, sc } = require('@reldens/utils');
 
 class RandomMapGenerator
 {
@@ -26,24 +26,27 @@ class RandomMapGenerator
         }
     }
 
-    setOptions(props)
+    setOptions(options)
     {
         // required:
-        this.mapFileName = sc.get(props, 'mapFileName', path.join(__dirname, 'generated', this.defaultMapFileName));
+        this.mapFileName = sc.get(options, 'mapFileName', path.join(__dirname, 'generated', this.defaultMapFileName));
         this.tileSize = sc.get(options, 'tileSize', false);
         this.tilesheetPath = sc.get(options, 'tilesheetPath', false);
         this.imageHeight = sc.get(options, 'imageHeight', false);
         this.imageWidth = sc.get(options, 'imageWidth', false);
         this.tileCount = sc.get(options, 'tileCount', false);
         this.columns = sc.get(options, 'columns', false);
-        this.margin = sc.get(options, 'margin', 0);
-        this.spacing = sc.get(options, 'spacing', 0);
         this.layerElements = sc.get(options, 'layerElements', null);
         this.elementsQuantity = sc.get(options, 'elementsQuantity', null);
-        this.groundTile = sc.get(options, 'groundTile', false);
         // optional:
+        this.margin = sc.get(options, 'margin', 0);
+        this.spacing = sc.get(options, 'spacing', 0);
+        this.groundTile = sc.get(options, 'groundTile', 0);
+        this.borderTile = sc.get(options, 'borderTile', 0);
+        this.generateElementsPath = sc.get(options, 'generateElementsPath', true);
         this.mainPathSize = sc.get(options, 'mainPathSize', 0);
         this.blockMapBorder = sc.get(options, 'blockMapBorder', false);
+        this.isBorderWalkable = sc.get(options, 'isBorderWalkable', false);
         this.freeSpaceTilesQuantity = sc.get(options, 'freeSpaceTilesQuantity', 0);
         if (1 > this.freeSpaceTilesQuantity && this.blockMapBorder) {
             this.freeSpaceTilesQuantity = 1;
@@ -54,6 +57,15 @@ class RandomMapGenerator
         this.randomGroundTiles = sc.get(options, 'randomGroundTiles', []);
         this.surroundingTiles = sc.get(options, 'surroundingTiles', null);
         this.corners = sc.get(options, 'corners', null);
+        // dynamic generated:
+        this.mapWidth = 0;
+        this.mapHeight = 0;
+        this.mapGrid = [];
+        this.groundLayerData = [];
+        this.pathLayerData = [];
+        this.mainPathStart = {pathStartX: 0, pathStartY: 0};
+        this.nextLayerId = 1;
+        this.additionalLayers = [];
     }
 
     validate()
@@ -64,17 +76,13 @@ class RandomMapGenerator
     generate()
     {
         let nextLayerId = 5;
-        const { mapWidth, mapHeight } = this.calculateMapSizeWithFreeSpace(this.layerElements, this.elementsQuantity, this.freeSpaceTilesQuantity);
-        let mapGrid = Array.from({ length: mapHeight }, () => Array(mapWidth).fill(true));
-        let groundLayerData = Array(mapWidth * mapHeight).fill(this.groundTile);
-        let collisionsMapBorderLayerData = this.populateCollisionsMapBorder(this.blockMapBorder, mapWidth, mapHeight, this.groundTile);
-        let pathLayerData = Array(mapWidth * mapHeight).fill(0);
-        let groundVariationsLayerData = Array(mapWidth * mapHeight).fill(0);
-        let mainPathStart = this.placeMainPath(mapGrid, mapWidth, mapHeight, this.pathTile, this.mainPathSize, pathLayerData);
-        let additionalLayers = this.placeElementsRandomly(mapGrid, mapWidth, mapHeight, this.layerElements, this.elementsQuantity, nextLayerId);
+        this.generateEmptyMap();
+        this.populateCollisionsMapBorder();
+        this.generateInitialPath();
+        this.placeElementsRandomly();
         this.connectPaths(mapGrid, pathLayerData, mapWidth, mapHeight, this.pathTile, mainPathStart, additionalLayers, this.collisionLayersForPaths);
-        
         // apply variations after all the elements are displayed in the current map:
+        let groundVariationsLayerData = Array(mapWidth * mapHeight).fill(0);
         this.applyVariations(groundVariationsLayerData, mapGrid, mapWidth, mapHeight, this.variableTilesPercentage, this.randomGroundTiles);
 
         let staticLayers = [
@@ -170,12 +178,46 @@ class RandomMapGenerator
 
     }
 
+    generateInitialPath()
+    {
+        if(!this.generateElementsPath){
+            return false;
+        }
+        this.pathLayerData = Array(this.mapWidth * this.mapHeight).fill(0);
+        this.nextLayerId++;
+        // starting point for the path to each element:
+        this.placeMainPath();
+    }
+
+    generateEmptyMap()
+    {
+        const {mapWidth, mapHeight} = this.calculateMapSizeWithFreeSpace();
+        this.mapWidth = mapWidth;
+        this.mapHeight = mapHeight;
+        this.mapGrid = Array.from({length: mapHeight}, () => Array(mapWidth).fill(true));
+        if (0 === this.groundTile) {
+            this.groundLayerData = Array(mapWidth * mapHeight).fill(this.groundTile);
+            this.nextLayerId++;
+        }
+        return {mapWidth, mapHeight, mapGrid: this.mapGrid, groundLayerData: this.groundLayerData};
+    }
+
     calculateMapSizeWithFreeSpace(layerElements, elementsQuantity, freeSpaceTilesQuantity)
     {
+        layerElements = layerElements || this.layerElements;
+        if (!layerElements) {
+            Logger.error('No layer elements defined.');
+            return false;
+        }
+        elementsQuantity = elementsQuantity || this.elementsQuantity;
+        if (!elementsQuantity) {
+            Logger.error('No layer elements quantity defined.');
+            return false;
+        }
+        freeSpaceTilesQuantity = freeSpaceTilesQuantity || this.freeSpaceTilesQuantity || 0;
         let totalArea = 0;
         let maxWidth = 0;
         let maxHeight = 0;
-
         // calculate total area required by elements, including free space:
         for (let elementType of Object.keys(elementsQuantity)) {
             const quantity = elementsQuantity[elementType];
@@ -199,22 +241,20 @@ class RandomMapGenerator
         return { mapWidth, mapHeight };
     }
 
-    generateAdditionalLayers(layerElements, nextLayerId)
+    generateAdditionalLayers()
     {
-        let additionalLayers = [];
         let addedLayerNames = new Set();
-
-        for (let elementType of Object.keys(layerElements)) {
-            for (let layer of layerElements[elementType]) {
+        for (let elementType of Object.keys(this.layerElements)) {
+            for (let layer of this.layerElements[elementType]) {
                 // check if layer name is unique
                 if (!addedLayerNames.has(layer.name)) {
                     // fill layer with empty tiles:
-                    let layerData = Array(mapWidth * mapHeight).fill(0);
-                    additionalLayers.push({
-                        id: nextLayerId++,
+                    let layerData = Array(this.mapWidth * this.mapHeight).fill(0);
+                    this.additionalLayers.push({
+                        id: this.nextLayerId++,
                         data: layerData,
-                        height: mapHeight,
-                        width: mapWidth,
+                        height: this.mapHeight,
+                        width: this.mapWidth,
                         name: layer.name,
                         type: 'tilelayer',
                         visible: true,
@@ -227,7 +267,6 @@ class RandomMapGenerator
                 }
             }
         }
-        return additionalLayers;
     }
 
     findRandomPosition(mapGrid, width, height)
@@ -276,25 +315,26 @@ class RandomMapGenerator
         }
     }
 
-    placeElementsRandomly(mapGrid, mapWidth, mapHeight, layerElements, elementsQuantity, nextLayerId)
+    placeElementsRandomly()
     {
-        let additionalLayers = this.generateAdditionalLayers(layerElements, nextLayerId);
-        for (let elementType of Object.keys(elementsQuantity)) {
-            for (let q = 0; q < elementsQuantity[elementType]; q++) {
-                const elementDatas = layerElements[elementType];
-                const baseElementData = elementDatas[0]; // Use the base layer to find a position
-                const position = this.findRandomPosition(mapGrid, baseElementData.width, baseElementData.height);
+        this.generateAdditionalLayers();
+        for(let elementType of Object.keys(this.elementsQuantity)){
+            for(let q = 0; q < this.elementsQuantity[elementType]; q++){
+                const elementDataArray = this.layerElements[elementType];
+                // use the base layer to find a position:
+                const baseElementData = elementDataArray[0];
+                const position = this.findRandomPosition(this.mapGrid, baseElementData.width, baseElementData.height);
                 if (position) {
-                    for (let elementData of elementDatas) {
+                    for (let elementData of elementDataArray) {
                         elementData.position = position;
-                        // Update each layer with the element's tiles at the determined position
-                        this.updateLayerData(mapGrid, additionalLayers, elementData, position);
+                        // update each layer with the elements tiles at the determined position:
+                        this.updateLayerData(this.mapGrid, this.additionalLayers, elementData, position);
                     }
                 }
             }
         }
-        // filter out layers without any tiles set
-        return additionalLayers.filter(layer => layer.data.some(tile => tile !== 0));
+        // filter out layers without any tiles set:
+        this.additionalLayers = this.additionalLayers.filter(layer => layer.data.some(tile => tile !== 0));
     }
 
     applyVariations(variationsLayer, mapGrid, width, height, percentage, variations)
@@ -314,69 +354,75 @@ class RandomMapGenerator
         }
     }
 
-    placeMainPath(mapGrid, mapWidth, mapHeight, pathTile, mainPathSize, pathLayerData)
+    placeMainPath()
     {
-        // select a random side of the map to place the main path
-        let pathStartX, pathStartY;
-        // Randomly choose an edge (top=0, right=1, bottom=2, left=3)
+        // randomly choose an edge (top=0, right=1, bottom=2, left=3):
         switch (Math.floor(Math.random() * 4)) {
-            case 0: // Top edge
-                pathStartX = Math.floor(Math.random() * (mapWidth - mainPathSize));
-                pathStartY = 0;
+            case 0: // top edge
+                this.pathStartX = Math.floor(Math.random() * (this.mapWidth - this.mainPathSize));
+                this.pathStartY = 0;
                 break;
-            case 1: // Right edge
-                pathStartX = mapWidth - 1;
-                pathStartY = Math.floor(Math.random() * (mapHeight - mainPathSize));
+            case 1: // right edge
+                this.pathStartX = this.mapWidth - 1;
+                this.pathStartY = Math.floor(Math.random() * (this.mapHeight - this.mainPathSize));
                 break;
-            case 2: // Bottom edge
-                pathStartX = Math.floor(Math.random() * (mapWidth - mainPathSize));
-                pathStartY = mapHeight - 1;
+            case 2: // bottom edge
+                this.pathStartX = Math.floor(Math.random() * (this.mapWidth - this.mainPathSize));
+                this.pathStartY = this.mapHeight - 1;
                 break;
-            case 3: // Left edge
-                pathStartX = 0;
-                pathStartY = Math.floor(Math.random() * (mapHeight - mainPathSize));
+            case 3: // left edge
+                this.pathStartX = 0;
+                this.pathStartY = Math.floor(Math.random() * (this.mapHeight - this.mainPathSize));
                 break;
         }
-        for (let i = 0; i < mainPathSize; i++) {
-            let x = pathStartX;
-            let y = pathStartY;
-            if (pathStartY === 0 || pathStartY === mapHeight - 1) { // Top or bottom edge
+        // @TODO - Refactor.
+        for(let i = 0; i < this.mainPathSize; i++){
+            let x = this.pathStartX;
+            let y = this.pathStartY;
+            if (this.pathStartY === 0 || this.pathStartY === this.mapHeight - 1) { // top or bottom edge
                 x += i;
-            } else { // Right or left edge
+            } else { // right or left edge
                 y += i;
             }
-            let index = y * mapWidth + x;
-            pathLayerData[index] = pathTile;
-            mapGrid[y][x] = false; // Mark as occupied
+            let index = y * this.mapWidth + x;
+            this.pathLayerData[index] = this.pathTile;
+            this.mapGrid[y][x] = false; // mark as occupied
         }
-        return {x: pathStartX, y: pathStartY};
     }
 
-    populateCollisionsMapBorder(blockMapBorder, mapWidth, mapHeight, groundTile)
+    populateCollisionsMapBorder()
     {
-        if (!blockMapBorder) return Array(mapWidth * mapHeight).fill(0); // Early return if blockMapBorder is false
-
-        let borderLayer = Array(mapWidth * mapHeight).fill(0);
-        for (let x = 0; x < mapWidth; x++) {
-            borderLayer[x] = groundTile; // Top border
-            borderLayer[(mapHeight - 1) * mapWidth + x] = groundTile; // Bottom border
+        if(!this.blockMapBorder || 0 === this.borderTile){
+            this.borderLayer = false;
+            return false;
         }
-        for (let y = 0; y < mapHeight; y++) {
-            borderLayer[y * mapWidth] = groundTile; // Left border
-            borderLayer[y * mapWidth + (mapWidth - 1)] = groundTile; // Right border
+        this.borderLayer = Array(this.mapWidth * this.mapHeight).fill(0);
+        this.nextLayerId++;
+        for (let x = 0; x < this.mapWidth; x++) {
+            // top border:
+            this.borderLayer[x] = this.groundTile;
+            // bottom border:
+            this.borderLayer[(this.mapHeight - 1) * this.mapWidth + x] = this.groundTile;
         }
-
-        // Mark the border as occupied in the mapGrid
-        for (let x = 0; x < mapWidth; x++) {
-            mapGrid[0][x] = false;
-            mapGrid[mapHeight - 1][x] = false;
+        for (let y = 0; y < this.mapHeight; y++) {
+            // left border:
+            this.borderLayer[y * this.mapWidth] = this.groundTile;
+            // right border:
+            this.borderLayer[y * this.mapWidth + (this.mapWidth - 1)] = this.groundTile;
         }
-        for (let y = 0; y < mapHeight; y++) {
-            mapGrid[y][0] = false;
-            mapGrid[y][mapWidth - 1] = false;
+        if(this.isBorderWalkable){
+            return this.borderLayer;
         }
-
-        return borderLayer;
+        // mark the border as occupied in the mapGrid
+        for (let x = 0; x < this.mapWidth; x++) {
+            this.mapGrid[0][x] = false;
+            this.mapGrid[this.mapHeight - 1][x] = false;
+        }
+        for (let y = 0; y < this.mapHeight; y++) {
+            this.mapGrid[y][0] = false;
+            this.mapGrid[y][this.mapWidth - 1] = false;
+        }
+        return this.borderLayer;
     }
 
     mergeLayersByTileValue(staticLayers, additionalLayers)
