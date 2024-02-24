@@ -30,13 +30,16 @@ class RandomMapGenerator
     setOptions(options)
     {
         // required:
+        this.rootFolder = sc.get(options, 'rootFolder', __dirname);
+        this.generatedFolder = this.fileHandler.joinPaths(this.rootFolder, 'generated');
         this.mapFileName = sc.get(
             options,
             'mapFileName',
-            this.fileHandler.joinPaths(__dirname, 'generated', this.defaultMapFileName)
+            this.fileHandler.joinPaths(this.generatedFolder, this.defaultMapFileName)
         );
         this.tileSize = sc.get(options, 'tileSize', false);
-        this.tilesheetPath = sc.get(options, 'tilesheetPath', false);
+        this.tileSheetPath = sc.get(options, 'tileSheetPath', false);
+        this.tileSheetName = sc.get(options, 'tileSheetName', false);
         this.imageHeight = sc.get(options, 'imageHeight', false);
         this.imageWidth = sc.get(options, 'imageWidth', false);
         this.tileCount = sc.get(options, 'tileCount', false);
@@ -71,7 +74,7 @@ class RandomMapGenerator
         this.mapGrid = [];
         this.groundLayerData = [];
         this.pathLayerData = [];
-        this.mainPathStart = {pathStartX: 0, pathStartY: 0};
+        this.mainPathStart = {x: 0, y: 0};
         this.additionalLayers = [];
         this.staticLayers = [];
         this.totalStaticLayers = 1
@@ -87,6 +90,10 @@ class RandomMapGenerator
 
     generate()
     {
+        this.isReady = this.validate();
+        if(!this.isReady){
+            return false;
+        }
         this.generateEmptyMap();
         this.populateCollisionsMapBorder();
         this.generateInitialPath();
@@ -114,7 +121,7 @@ class RandomMapGenerator
             tilesets: [{
                 columns: this.columns,
                 firstgid: 1,
-                image: this.tilesheetPath,
+                image: this.tileSheetPath,
                 imageheight: this.imageHeight,
                 imagewidth: this.imageWidth,
                 margin: this.margin,
@@ -126,6 +133,7 @@ class RandomMapGenerator
             }],
             layers
         };
+        this.fileHandler.copyTilesheet(this.tileSheetPath, this.tileSheetName, this.generatedFolder);
         // save the map in a JSON file:
         this.fileHandler.writeFile(this.mapFileName, this.mapToJSON(map));
     }
@@ -161,7 +169,7 @@ class RandomMapGenerator
         this.mapWidth = mapWidth;
         this.mapHeight = mapHeight;
         this.mapGrid = Array.from({length: mapHeight}, () => Array(mapWidth).fill(true));
-        if(0 === this.groundTile){
+        if(0 !== this.groundTile){
             this.groundLayerData = Array(mapWidth * mapHeight).fill(this.groundTile);
         }
     }
@@ -331,27 +339,27 @@ class RandomMapGenerator
         // randomly choose an edge (top=0, right=1, bottom=2, left=3):
         switch (Math.floor(Math.random() * 4)){
             case 0: // top edge
-                this.pathStartX = Math.floor(Math.random() * (this.mapWidth - this.mainPathSize));
-                this.pathStartY = 0;
+                this.mainPathStart.x = Math.floor(Math.random() * (this.mapWidth - this.mainPathSize));
+                this.mainPathStart.y = 0;
                 break;
             case 1: // right edge
-                this.pathStartX = this.mapWidth - 1;
-                this.pathStartY = Math.floor(Math.random() * (this.mapHeight - this.mainPathSize));
+                this.mainPathStart.x = this.mapWidth - 1;
+                this.mainPathStart.y = Math.floor(Math.random() * (this.mapHeight - this.mainPathSize));
                 break;
             case 2: // bottom edge
-                this.pathStartX = Math.floor(Math.random() * (this.mapWidth - this.mainPathSize));
-                this.pathStartY = this.mapHeight - 1;
+                this.mainPathStart.x = Math.floor(Math.random() * (this.mapWidth - this.mainPathSize));
+                this.mainPathStart.y = this.mapHeight - 1;
                 break;
             case 3: // left edge
-                this.pathStartX = 0;
-                this.pathStartY = Math.floor(Math.random() * (this.mapHeight - this.mainPathSize));
+                this.mainPathStart.x = 0;
+                this.mainPathStart.y = Math.floor(Math.random() * (this.mapHeight - this.mainPathSize));
                 break;
         }
         // @TODO - Refactor.
         for(let i = 0; i < this.mainPathSize; i++){
-            let x = this.pathStartX;
-            let y = this.pathStartY;
-            if(this.pathStartY === 0 || this.pathStartY === this.mapHeight - 1){ // top or bottom edge
+            let x = this.mainPathStart.x;
+            let y = this.mainPathStart.y;
+            if(this.mainPathStart.y === 0 || this.mainPathStart.y === this.mapHeight - 1){ // top or bottom edge
                 x += i;
             } else { // right or left edge
                 y += i;
@@ -580,7 +588,11 @@ class RandomMapGenerator
                 if(this.isBorder(pathTilePosition)){
                     continue;
                 }
-                let path = this.pathFinder.findPath(this.mainPathStart, pathTilePosition, this.mapWidth, this.mapHeight, grid);
+                let path = this.pathFinder.findPath(
+                    this.mainPathStart,
+                    pathTilePosition,
+                    grid
+                );
                 let previousPoint = false;
                 let pointIndex = 0;
                 for(let point of path){

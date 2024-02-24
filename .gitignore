@@ -17,3 +17,7 @@ node_modules/
 
 # Optional npm cache directory
 .npm
+
+# Project
+examples/generated/*.png
+examples/generated/*.json
