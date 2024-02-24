@@ -8,8 +8,10 @@ const { RandomMapGenerator} = require('../random-map-generator');
 const { layerElements } = require('./layer-elements');
 
 const mapData = {
+    rootFolder: __dirname,
     tileSize: 32,
-    tilesheetPath: 'tilesheet.png',
+    tileSheetPath: 'tilesheet.png',
+    tileSheetName: 'tilesheet.png',
     imageHeight: 578,
     imageWidth: 612,
     tileCount: 306,
