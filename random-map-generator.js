@@ -11,6 +11,7 @@ let { Logger, sc } = require('@reldens/utils');
 
 class RandomMapGenerator
 {
+
     version = 1;
 
     constructor(props)
@@ -30,6 +31,16 @@ class RandomMapGenerator
     setOptions(options)
     {
         // required:
+        this.tileSize = sc.get(options, 'tileSize', false);
+        this.tileSheetPath = sc.get(options, 'tileSheetPath', false);
+        this.tileSheetName = sc.get(options, 'tileSheetName', false);
+        this.imageHeight = sc.get(options, 'imageHeight', false);
+        this.imageWidth = sc.get(options, 'imageWidth', false);
+        this.tileCount = sc.get(options, 'tileCount', false);
+        this.columns = sc.get(options, 'columns', false);
+        this.layerElements = sc.get(options, 'layerElements', null);
+        this.elementsQuantity = sc.get(options, 'elementsQuantity', null);
+        // optional:
         this.rootFolder = sc.get(options, 'rootFolder', __dirname);
         this.generatedFolder = sc.get(
             options,
@@ -41,16 +52,6 @@ class RandomMapGenerator
             'mapFileName',
             this.fileHandler.joinPaths(this.generatedFolder, this.defaultMapFileName)
         );
-        this.tileSize = sc.get(options, 'tileSize', false);
-        this.tileSheetPath = sc.get(options, 'tileSheetPath', false);
-        this.tileSheetName = sc.get(options, 'tileSheetName', false);
-        this.imageHeight = sc.get(options, 'imageHeight', false);
-        this.imageWidth = sc.get(options, 'imageWidth', false);
-        this.tileCount = sc.get(options, 'tileCount', false);
-        this.columns = sc.get(options, 'columns', false);
-        this.layerElements = sc.get(options, 'layerElements', null);
-        this.elementsQuantity = sc.get(options, 'elementsQuantity', null);
-        // optional:
         this.margin = sc.get(options, 'margin', 0);
         this.spacing = sc.get(options, 'spacing', 0);
         this.groundTile = sc.get(options, 'groundTile', 0);
