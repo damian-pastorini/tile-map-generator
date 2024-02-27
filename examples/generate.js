@@ -4,7 +4,7 @@
  *
  */
 
-const { RandomMapGenerator} = require('../random-map-generator');
+const { RandomMapGenerator} = require('../lib/random-map-generator');
 const { layerElements } = require('./layer-elements');
 
 const mapData = {
