@@ -19,5 +19,5 @@ node_modules/
 .npm
 
 # Project
-examples/generated/*.png
-examples/generated/*.json
+**/generated/**/*.png
+**/generated/**/*.json
