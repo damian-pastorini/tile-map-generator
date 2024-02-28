@@ -35,26 +35,11 @@ const execute = async () => {
         blockMapBorder: true,
         freeSpaceTilesQuantity: 2,
         variableTilesPercentage: 15,
-        pathTile: 121,
+        pathTile: elementsProvider.pathTile,
         collisionLayersForPaths: ['change-points', 'collisions', 'tree-base'],
-        randomGroundTiles: [26, 27, 28, 29, 30, 36, 37, 38, 39, 50, 51, 52, 53],
-        surroundingTiles: {
-            '-1,-1': 127, // 294, // top-left
-            '-1,0': 124, // 295, // top-center
-            '-1,1': 130, // 296, // top-right
-            '0,-1': 126, // 293, // middle-left
-            // '0,0': 121, // 297, // middle-center
-            '0,1': 129, // 289, // middle-right
-            '1,-1': 132, // 292, // bottom-left
-            '1,0': 131, // 291, // bottom-center
-            '1,1': 133, // 290, // bottom-right
-        },
-        corners: {
-            '-1,-1': 285, // 294, // top-left
-            '-1,1': 284, // 296, // top-right
-            '1,-1': 283, // 292, // bottom-left
-            '1,1': 282, // 290, // bottom-right
-        }
+        randomGroundTiles: elementsProvider.randomGroundTiles,
+        surroundingTiles: elementsProvider.surroundingTiles,
+        corners: elementsProvider.corners
     };
 
     const generator = new RandomMapGenerator(mapData);
