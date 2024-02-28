@@ -26,7 +26,7 @@
         "url": "https://github.com/damian-pastorini/tile-map-generator/issues"
     },
     "dependencies": {
-        "@reldens/tile-map-optimizer": "^0.2.0",
+        "@reldens/tile-map-optimizer": "^0.4.0",
         "@reldens/utils": "^0.23.0",
         "pathfinding": "^0.4.18"
     }

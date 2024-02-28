@@ -6,11 +6,12 @@
 
 const { ElementsProvider } = require('../../lib/generator/elements-provider');
 const { RandomMapGenerator} = require('../../lib/random-map-generator');
-const map = require('./reldens-town.json');
+const map = require('./reldens-town-composite.json');
+const rootFolder = __dirname;
 
 const execute = async () => {
 
-    let elementsProvider = new ElementsProvider({ map });
+    let elementsProvider = new ElementsProvider({map, rootFolder});
 
     await elementsProvider.splitElements();
 
@@ -18,7 +19,7 @@ const execute = async () => {
     let optimizedTileset = optimizedMap.tilesets[0];
 
     let mapData = {
-        rootFolder: __dirname,
+        rootFolder,
         tileSize: optimizedMap.tilewidth,
         tileSheetPath: optimizedTileset.image,
         tileSheetName: optimizedTileset.image,
@@ -29,8 +30,8 @@ const execute = async () => {
         margin: optimizedTileset.margin,
         spacing: optimizedTileset.spacing,
         layerElements: elementsProvider.croppedElements,
-        elementsQuantity: {house1: 3, house2: 2, tree: 6},
-        groundTile: 116,
+        elementsQuantity: elementsProvider.elementsQuantity,
+        groundTile: elementsProvider.groundTile,
         mainPathSize: 3,
         blockMapBorder: true,
         freeSpaceTilesQuantity: 2,
