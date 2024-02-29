@@ -10,18 +10,14 @@ const map = require('./reldens-town-composite.json');
 const rootFolder = __dirname;
 
 const execute = async () => {
-
     let elementsProvider = new ElementsProvider({map, rootFolder});
-
     await elementsProvider.splitElements();
-
     let optimizedMap = elementsProvider.optimizedMap;
     let optimizedTileset = optimizedMap.tilesets[0];
-
     let mapData = {
         rootFolder,
         tileSize: optimizedMap.tilewidth,
-        tileSheetPath: optimizedTileset.image,
+        tileSheetPath: elementsProvider.fileHandler.joinPaths('generated', optimizedTileset.image),
         tileSheetName: optimizedTileset.image,
         imageHeight: optimizedTileset.imageheight,
         imageWidth: optimizedTileset.imagewidth,
@@ -42,9 +38,7 @@ const execute = async () => {
         surroundingTiles: elementsProvider.surroundingTiles,
         corners: elementsProvider.corners
     };
-
     const generator = new RandomMapGenerator(mapData);
-
     generator.generate();
 };
 
