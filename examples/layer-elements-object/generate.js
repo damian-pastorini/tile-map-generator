@@ -18,6 +18,7 @@ const mapData = {
     columns: 18,
     margin: 1,
     spacing: 2,
+    // tiles: [],
     layerElements,
     elementsQuantity: {house1: 3, house2: 2, tree: 6},
     groundTile: 116,

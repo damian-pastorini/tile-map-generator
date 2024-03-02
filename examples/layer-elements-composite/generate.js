@@ -25,6 +25,7 @@ const execute = async () => {
         columns: optimizedTileset.columns,
         margin: optimizedTileset.margin,
         spacing: optimizedTileset.spacing,
+        tiles: optimizedTileset.tiles,
         layerElements: elementsProvider.croppedElements,
         elementsQuantity: elementsProvider.elementsQuantity,
         groundTile: elementsProvider.groundTile,
