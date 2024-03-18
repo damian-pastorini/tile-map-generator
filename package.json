@@ -1,7 +1,7 @@
 {
     "name": "@reldens/tile-map-generator",
     "scope": "@reldens",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Reldens - Tile Map Generator",
     "author": "Damian A. Pastorini",
     "license": "MIT",
