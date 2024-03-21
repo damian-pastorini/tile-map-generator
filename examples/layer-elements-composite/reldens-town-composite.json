@@ -1490,7 +1490,7 @@
         {
          "columns":39,
          "firstgid":1249,
-         "image":"terrain-soft.png",
+         "image":"terrain.png",
          "imageheight":608,
          "imagewidth":624,
          "margin":0,
@@ -1659,7 +1659,7 @@
         {
          "columns":51,
          "firstgid":5545,
-         "image":"water-soft.png",
+         "image":"water.png",
          "imageheight":880,
          "imagewidth":816,
          "margin":0,
