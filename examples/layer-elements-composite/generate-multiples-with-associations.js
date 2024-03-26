@@ -19,7 +19,7 @@ const execute = async () => {
             blockMapBorder: true,
             freeSpaceTilesQuantity: 2,
             variableTilesPercentage: 15,
-            collisionLayersForPaths: ['change-points', 'collisions', 'tree-base']
+            collisionLayersForPaths: ['change-points', 'collisions']
         });
         await generators[mapFileName].generate();
     }
