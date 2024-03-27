@@ -870,7 +870,7 @@
                  "value":true
                 }, 
                 {
-                 "name":"compositeFileName",
+                 "name":"compositeFileNames",
                  "type":"string",
                  "value":"house-composite"
                 }, 
@@ -1136,7 +1136,7 @@
                  "value":true
                 }, 
                 {
-                 "name":"compositeFileName",
+                 "name":"compositeFileNames",
                  "type":"string",
                  "value":"house-composite"
                 }, 
@@ -1402,7 +1402,7 @@
                  "value":true
                 }, 
                 {
-                 "name":"compositeFileName",
+                 "name":"compositeFileNames",
                  "type":"string",
                  "value":"house-composite"
                 }, 
@@ -1420,6 +1420,16 @@
                  "name":"entryPosition",
                  "type":"string",
                  "value":"down-middle"
+                }, 
+                {
+                 "name":"entryPositionSize",
+                 "type":"int",
+                 "value":2
+                }, 
+                {
+                 "name":"upperFloorCompositeFileNames",
+                 "type":"string",
+                 "value":"house-composite"
                 }, 
                 {
                  "name":"upperFloors",
