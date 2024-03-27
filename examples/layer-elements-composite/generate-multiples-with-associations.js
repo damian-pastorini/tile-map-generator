@@ -20,16 +20,17 @@ const execute = async () => {
             freeSpaceTilesQuantity: 2,
             variableTilesPercentage: 15,
             collisionLayersForPaths: ['change-points', 'collisions'],
-            writeCroppedElementsFiles: true,
+            // writeCroppedElementsFiles: true,
             associatedMapsConfig: {
                 generateElementsPath: false,
                 blockMapBorder: true,
-                freeSpaceTilesQuantity: 1,
+                freeSpaceTilesQuantity: 2,
                 variableTilesPercentage: 0,
                 placeElementsOrder: 'inOrder',
                 orderElementsBySize: false,
                 randomizeQuantities: true,
-                writeCroppedElementsFiles: true
+                applySurroundingPathTiles: false
+                // writeCroppedElementsFiles: true
             }
         };
         generators[mapFileName] = await RandomMapGenerator.fromComposite(generationOptions);
