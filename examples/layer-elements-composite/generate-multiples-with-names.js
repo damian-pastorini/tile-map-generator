@@ -11,7 +11,8 @@ const rootFolder = __dirname;
 const execute = async () => {
     let generators = {};
     for(let mapFileName of ['map-001', 'map-002', 'map-003']){
-        generators[mapFileName] = await RandomMapGenerator.fromComposite({
+        generators[mapFileName] = new RandomMapGenerator();
+        await generators[mapFileName].fromComposite({
             tileMapJSON: JSON.parse(JSON.stringify(tileMapJSON)),
             mapFileName,
             rootFolder,

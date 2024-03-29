@@ -5,7 +5,11 @@
  */
 
 const { RandomMapGenerator} = require('../../lib/random-map-generator');
-const { layerElements } = require('./layer-elements');
+const layerElements = {
+    house1: require('./house-001.json').layers,
+    house2: require('./house-002.json').layers,
+    tree: require('./tree.json').layers
+};
 
 const mapData = {
     rootFolder: __dirname,
@@ -18,7 +22,6 @@ const mapData = {
     columns: 18,
     margin: 1,
     spacing: 2,
-    // tiles: [],
     layerElements,
     elementsQuantity: {house1: 3, house2: 2, tree: 6},
     groundTile: 116,

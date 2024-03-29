@@ -27,7 +27,7 @@
     },
     "dependencies": {
         "@reldens/tile-map-optimizer": "^0.8.0",
-        "@reldens/utils": "^0.26.0",
+        "@reldens/utils": "^0.27.0",
         "pathfinding": "^0.4.18"
     }
 }
