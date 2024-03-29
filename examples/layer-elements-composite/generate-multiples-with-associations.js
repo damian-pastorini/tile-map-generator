@@ -5,13 +5,14 @@
  */
 
 const { RandomMapGenerator} = require('../../lib/random-map-generator');
+const { AssociatedMaps } = require('../../lib/generator/associated-maps');
 const tileMapJSON = require('./reldens-town-composite-with-associations.json');
 const rootFolder = __dirname;
 
 const execute = async () => {
     let generators = {};
     let generatedMaps = {};
-    let mapNames = ['map-associations-001', 'map-associations-002', 'map-associations-003'];
+    let mapNames = ['town-001', 'town-002', 'town-003', 'town-004'];
     let i = 0;
     for(let mapFileName of mapNames){
         let previousGenerator = 0 < i ? generators[mapNames[i - 1]] : null;
@@ -28,9 +29,17 @@ const execute = async () => {
             freeSpaceTilesQuantity: 2,
             variableTilesPercentage: 15,
             collisionLayersForPaths: ['change-points', 'collisions'],
-            // writeCroppedElementsFiles: true,
-            previousMainPath,
-            associatedMapsConfig: {
+            previousMainPath
+        };
+        generators[mapFileName] = new RandomMapGenerator();
+        await generators[mapFileName].fromComposite(generationOptions);
+        generatedMaps[mapFileName] = await generators[mapFileName].generate();
+        let associatedMaps = new AssociatedMaps();
+        await associatedMaps.generate(
+            generatedMaps[mapFileName],
+            mapFileName,
+            rootFolder,
+            {
                 generateElementsPath: false,
                 blockMapBorder: true,
                 freeSpaceTilesQuantity: 1,
@@ -39,11 +48,9 @@ const execute = async () => {
                 orderElementsBySize: true, // this will order the elements by size
                 randomizeQuantities: false, // when ordering the elements by size we need to set this "false"
                 applySurroundingPathTiles: false
-                // writeCroppedElementsFiles: true
-            }
-        };
-        generators[mapFileName] = await RandomMapGenerator.fromComposite(generationOptions);
-        generatedMaps[mapFileName] = await generators[mapFileName].generate();
+            },
+            generators[mapFileName]
+        );
         i++;
     }
 };
