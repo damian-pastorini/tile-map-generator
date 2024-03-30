@@ -29,7 +29,8 @@ const execute = async () => {
             freeSpaceTilesQuantity: 2,
             variableTilesPercentage: 15,
             collisionLayersForPaths: ['change-points', 'collisions'],
-            previousMainPath
+            previousMainPath,
+            expandElementsSize: 1
         };
         generators[mapFileName] = new RandomMapGenerator();
         await generators[mapFileName].fromComposite(generationOptions);
@@ -45,8 +46,8 @@ const execute = async () => {
                 freeSpaceTilesQuantity: 0,
                 variableTilesPercentage: 0,
                 placeElementsOrder: 'inOrder', // this will place the elements in the first available position
-                orderElementsBySize: true, // this will order the elements by size
-                randomizeQuantities: false, // when ordering the elements by size we need to set this "false"
+                orderElementsBySize: false, // this will order the elements by size
+                randomizeQuantities: true, // when ordering the elements by size we need to set this "false"
                 applySurroundingPathTiles: false
             },
             generators[mapFileName]

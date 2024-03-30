@@ -995,12 +995,6 @@
          "id":91,
          "name":"table-04-base",
          "opacity":1,
-         "properties":[
-                {
-                 "name":"quantity",
-                 "type":"int",
-                 "value":1
-                }],
          "type":"tilelayer",
          "visible":true,
          "width":40,
