@@ -885,6 +885,11 @@
                  "value":"down-left"
                 }, 
                 {
+                 "name":"entryPositionSize",
+                 "type":"int",
+                 "value":2
+                }, 
+                {
                  "name":"upperFloors",
                  "type":"int",
                  "value":1
@@ -1151,6 +1156,11 @@
                  "value":"down-middle"
                 }, 
                 {
+                 "name":"entryPositionSize",
+                 "type":"int",
+                 "value":2
+                }, 
+                {
                  "name":"upperFloors",
                  "type":"int",
                  "value":1
@@ -1407,9 +1417,9 @@
                  "value":"house-composite"
                 }, 
                 {
-                 "name":"createWalls",
-                 "type":"bool",
-                 "value":true
+                 "name":"downFloorCompositeFileNames",
+                 "type":"string",
+                 "value":"house-composite"
                 }, 
                 {
                  "name":"downFloors",
@@ -1419,7 +1429,7 @@
                 {
                  "name":"entryPosition",
                  "type":"string",
-                 "value":"down-middle"
+                 "value":"down-right"
                 }, 
                 {
                  "name":"entryPositionSize",
