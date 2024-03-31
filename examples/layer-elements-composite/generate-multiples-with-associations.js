@@ -21,6 +21,8 @@ const execute = async () => {
             previousMainPath = !previousGenerator.hasAssociatedMap ? previousGenerator.generatedMainPathIndexes : [];
         }
         let generationOptions = {
+            // @NOTE: this could be replaced by sc.deepJsonClone(tileMapJSON), but I wanted to show that it must be
+            // a deep copy, otherwise the original object would be modified.
             tileMapJSON: JSON.parse(JSON.stringify(tileMapJSON)),
             mapFileName,
             rootFolder,
@@ -33,7 +35,7 @@ const execute = async () => {
             expandElementsSize: 1
         };
         generators[mapFileName] = new RandomMapGenerator();
-        await generators[mapFileName].fromComposite(generationOptions);
+        await generators[mapFileName].fromElementsProvider(generationOptions);
         generatedMaps[mapFileName] = await generators[mapFileName].generate();
         let associatedMaps = new AssociatedMaps();
         await associatedMaps.generate(

@@ -12,7 +12,7 @@ const execute = async () => {
     let generators = {};
     for(let mapFileName of ['map-001', 'map-002', 'map-003']){
         generators[mapFileName] = new RandomMapGenerator();
-        await generators[mapFileName].fromComposite({
+        await generators[mapFileName].fromElementsProvider({
             tileMapJSON: JSON.parse(JSON.stringify(tileMapJSON)),
             mapFileName,
             rootFolder,

@@ -9,7 +9,8 @@ const tileMapJSON = require('./reldens-town-composite.json');
 const rootFolder = __dirname;
 
 const execute = async () => {
-    const generator = await RandomMapGenerator.fromComposite({
+    let generator = new RandomMapGenerator();
+    await generator.fromElementsProvider({
         tileMapJSON,
         rootFolder,
         mainPathSize: 3,
