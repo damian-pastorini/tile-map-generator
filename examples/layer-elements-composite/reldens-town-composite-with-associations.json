@@ -863,6 +863,37 @@
          "id":75,
          "name":"house-01-change-points",
          "opacity":1,
+         "properties":[
+                {
+                 "name":"blockMapBorder",
+                 "type":"bool",
+                 "value":true
+                }, 
+                {
+                 "name":"compositeFileNames",
+                 "type":"string",
+                 "value":"house-composite"
+                }, 
+                {
+                 "name":"createWalls",
+                 "type":"bool",
+                 "value":true
+                }, 
+                {
+                 "name":"entryPosition",
+                 "type":"string",
+                 "value":"down-left"
+                }, 
+                {
+                 "name":"entryPositionSize",
+                 "type":"int",
+                 "value":2
+                }, 
+                {
+                 "name":"upperFloors",
+                 "type":"int",
+                 "value":1
+                }],
          "type":"tilelayer",
          "visible":true,
          "width":48,
@@ -1103,6 +1134,37 @@
          "id":78,
          "name":"house-02-change-points",
          "opacity":1,
+         "properties":[
+                {
+                 "name":"blockMapBorder",
+                 "type":"bool",
+                 "value":true
+                }, 
+                {
+                 "name":"compositeFileNames",
+                 "type":"string",
+                 "value":"house-composite"
+                }, 
+                {
+                 "name":"createWalls",
+                 "type":"bool",
+                 "value":true
+                }, 
+                {
+                 "name":"entryPosition",
+                 "type":"string",
+                 "value":"down-middle"
+                }, 
+                {
+                 "name":"entryPositionSize",
+                 "type":"int",
+                 "value":2
+                }, 
+                {
+                 "name":"upperFloors",
+                 "type":"int",
+                 "value":1
+                }],
          "type":"tilelayer",
          "visible":true,
          "width":48,
@@ -1343,6 +1405,47 @@
          "id":100,
          "name":"house-03-change-points",
          "opacity":1,
+         "properties":[
+                {
+                 "name":"blockMapBorder",
+                 "type":"bool",
+                 "value":true
+                }, 
+                {
+                 "name":"compositeFileNames",
+                 "type":"string",
+                 "value":"house-composite"
+                }, 
+                {
+                 "name":"downFloorCompositeFileNames",
+                 "type":"string",
+                 "value":"house-composite"
+                }, 
+                {
+                 "name":"downFloors",
+                 "type":"int",
+                 "value":1
+                }, 
+                {
+                 "name":"entryPosition",
+                 "type":"string",
+                 "value":"down-right"
+                }, 
+                {
+                 "name":"entryPositionSize",
+                 "type":"int",
+                 "value":2
+                }, 
+                {
+                 "name":"upperFloorCompositeFileNames",
+                 "type":"string",
+                 "value":"house-composite"
+                }, 
+                {
+                 "name":"upperFloors",
+                 "type":"int",
+                 "value":1
+                }],
          "type":"tilelayer",
          "visible":true,
          "width":48,
@@ -1466,8 +1569,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":102,
- "nextobjectid":10,
+ "nextlayerid":105,
+ "nextobjectid":28,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
