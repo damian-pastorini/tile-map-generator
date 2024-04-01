@@ -50,7 +50,9 @@ const mapData = {
         '1,1': 282, // 290, // bottom-right
     }
 };
+const execute = async () => {
+    const generator = new RandomMapGenerator(mapData);
+    await generator.generate();
+};
 
-const generator = new RandomMapGenerator(mapData);
-
-generator.generate();
+execute();

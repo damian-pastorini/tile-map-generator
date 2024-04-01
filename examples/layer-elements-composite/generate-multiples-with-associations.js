@@ -12,7 +12,7 @@ const rootFolder = __dirname;
 const execute = async () => {
     let generators = {};
     let generatedMaps = {};
-    let mapNames = ['town-001']; //, 'town-002', 'town-003', 'town-004']; //
+    let mapNames = ['town-001', 'town-002', 'town-003', 'town-004'];
     let i = 0;
     for(let mapFileName of mapNames){
         let previousGenerator = 0 < i ? generators[mapNames[i - 1]] : null;
