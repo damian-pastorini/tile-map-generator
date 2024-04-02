@@ -16,6 +16,7 @@ const execute = async () => {
             tileMapJSON: JSON.parse(JSON.stringify(tileMapJSON)),
             mapFileName,
             rootFolder,
+            factor: 2,
             mainPathSize: 3,
             blockMapBorder: true,
             freeSpaceTilesQuantity: 2,

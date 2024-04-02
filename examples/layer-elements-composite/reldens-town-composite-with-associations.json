@@ -880,6 +880,11 @@
                  "value":true
                 }, 
                 {
+                 "name":"elementTitle",
+                 "type":"string",
+                 "value":"House"
+                }, 
+                {
                  "name":"entryPosition",
                  "type":"string",
                  "value":"down-left"
@@ -1151,6 +1156,11 @@
                  "value":true
                 }, 
                 {
+                 "name":"elementTitle",
+                 "type":"string",
+                 "value":"House"
+                }, 
+                {
                  "name":"entryPosition",
                  "type":"string",
                  "value":"down-middle"
@@ -1163,7 +1173,7 @@
                 {
                  "name":"upperFloors",
                  "type":"int",
-                 "value":1
+                 "value":2
                 }],
          "type":"tilelayer",
          "visible":true,
@@ -1425,6 +1435,11 @@
                  "name":"downFloors",
                  "type":"int",
                  "value":1
+                }, 
+                {
+                 "name":"elementTitle",
+                 "type":"string",
+                 "value":"House"
                 }, 
                 {
                  "name":"entryPosition",
