@@ -14,9 +14,9 @@ const execute = async () => {
     let generatedMaps = {};
     let mapsInformation = [
         {mapFileName: 'town-001', mapTitle: 'Town 1'},
-        {mapFileName: 'town-002', mapTitle: 'Town 2'},
-        {mapFileName: 'town-003', mapTitle: 'Town 3'},
-        {mapFileName: 'town-004', mapTitle: 'Town 4'},
+        // {mapFileName: 'town-002', mapTitle: 'Town 2'},
+        // {mapFileName: 'town-003', mapTitle: 'Town 3'},
+        // {mapFileName: 'town-004', mapTitle: 'Town 4'},
     ];
     let i = 0;
     for(let mapInformation of mapsInformation){
