@@ -13,6 +13,7 @@ const execute = async () => {
     await generator.fromElementsProvider({
         tileMapJSON,
         rootFolder,
+        factor: 2,
         mainPathSize: 3,
         blockMapBorder: true,
         freeSpaceTilesQuantity: 2,
