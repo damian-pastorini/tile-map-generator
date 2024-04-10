@@ -255,6 +255,12 @@
          "id":129,
          "name":"stairs-up-return-point",
          "opacity":1,
+         "properties":[
+                {
+                 "name":"position",
+                 "type":"string",
+                 "value":"down"
+                }],
          "type":"tilelayer",
          "visible":true,
          "width":40,
@@ -477,6 +483,12 @@
          "id":130,
          "name":"stairs-down-return-point",
          "opacity":1,
+         "properties":[
+                {
+                 "name":"position",
+                 "type":"string",
+                 "value":"down"
+                }],
          "type":"tilelayer",
          "visible":true,
          "width":40,
@@ -1923,6 +1935,12 @@
  "nextlayerid":131,
  "nextobjectid":1,
  "orientation":"orthogonal",
+ "properties":[
+        {
+         "name":"position",
+         "type":"string",
+         "value":"down"
+        }],
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
  "tileheight":16,
