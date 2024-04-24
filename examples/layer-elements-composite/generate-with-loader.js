@@ -5,14 +5,18 @@
  */
 
 const { LayerElementsCompositeLoader } = require('../../lib/loader/layer-elements-composite-loader');
+const { RandomMapGenerator } = require('../../lib/random-map-generator');
 
 const execute = async () => {
-    let generator = new LayerElementsCompositeLoader({
+    let loader = new LayerElementsCompositeLoader({
         rootFolder: __dirname,
         mapDataFile: 'map-composite-data.json',
         compositeElementsFile: 'reldens-town-composite.json'
     });
-    await generator.execute();
+    await loader.load();
+    const generator = new RandomMapGenerator();
+    await generator.fromElementsProvider(loader.mapData);
+    return await generator.generate();
 };
 
 execute();
