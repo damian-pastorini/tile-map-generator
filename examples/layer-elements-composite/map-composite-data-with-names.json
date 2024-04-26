@@ -1,0 +1,9 @@
+{
+    "factor": 2,
+    "mainPathSize": 3,
+    "blockMapBorder": true,
+    "freeSpaceTilesQuantity": 2,
+    "variableTilesPercentage": 15,
+    "collisionLayersForPaths": ["change-points", "collisions", "tree-base"],
+    "mapNames": ["map-001", "map-002", "map-003"]
+}
