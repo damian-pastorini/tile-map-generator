@@ -36,5 +36,10 @@
         "-1,1": 284,
         "1,-1": 283,
         "1,1": 282
+    },
+    "layerElementsFiles": {
+        "house1": "house-001.json",
+        "house2": "house-002.json",
+        "tree": "tree.json"
     }
 }
