@@ -10,8 +10,7 @@ const execute = async () => {
     let generator = new MultipleByLoaderGenerator({
         loaderData: {
             rootFolder: __dirname,
-            mapDataFile: 'map-composite-data-with-names.json',
-            compositeElementsFile: 'reldens-town-composite.json'
+            mapDataFile: 'map-composite-data-with-names.json'
         }
     });
     await generator.generate();

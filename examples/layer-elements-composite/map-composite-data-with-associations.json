@@ -20,5 +20,6 @@
         "orderElementsBySize": false,
         "randomizeQuantities": true,
         "applySurroundingPathTiles": false
-    }
+    },
+    "compositeElementsFile": "reldens-town-composite-with-associations.json"
 }

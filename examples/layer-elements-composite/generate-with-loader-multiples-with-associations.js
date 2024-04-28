@@ -12,8 +12,7 @@ const execute = async () => {
     let generator = new MultipleWithAssociationsByLoaderGenerator({
         loaderData: {
             rootFolder: __dirname,
-            mapDataFile: 'map-composite-data-with-associations.json',
-            compositeElementsFile: 'reldens-town-composite-with-associations.json'
+            mapDataFile: 'map-composite-data-with-associations.json'
         }
     });
     await generator.generate();
