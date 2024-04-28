@@ -4,7 +4,7 @@
  *
  */
 
-const { RandomMapGenerator} = require('../../lib/random-map-generator');
+const { RandomMapGenerator } = require('../../lib/random-map-generator');
 const layerElements = {
     house1: require('./house-001.json').layers,
     house2: require('./house-002.json').layers,
@@ -50,6 +50,7 @@ const mapData = {
         '1,1': 282, // 290, // bottom-right
     }
 };
+
 const execute = async () => {
     const generator = new RandomMapGenerator(mapData);
     await generator.generate();

@@ -1,7 +1,7 @@
 {
     "name": "@reldens/tile-map-generator",
     "scope": "@reldens",
-    "version": "0.10.0",
+    "version": "0.11.0",
     "description": "Reldens - Tile Map Generator",
     "author": "Damian A. Pastorini",
     "license": "MIT",
@@ -26,8 +26,8 @@
         "url": "https://github.com/damian-pastorini/tile-map-generator/issues"
     },
     "dependencies": {
-        "@reldens/tile-map-optimizer": "^0.13.0",
-        "@reldens/utils": "^0.30.0",
-        "pathfinding": "^0.4.18"
+        "@reldens/tile-map-optimizer": "^0.14.0",
+        "@reldens/utils": "^0.32.0",
+        "pathfinding": "0.4.18"
     }
 }

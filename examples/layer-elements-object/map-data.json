@@ -1,0 +1,45 @@
+{
+    "tileSize": 32,
+    "tileSheetPath": "tilesheet.png",
+    "tileSheetName": "tilesheet.png",
+    "imageHeight": 578,
+    "imageWidth": 612,
+    "tileCount": 306,
+    "columns": 18,
+    "margin": 1,
+    "spacing": 2,
+    "elementsQuantity": {
+        "house1": 3,
+        "house2": 2,
+        "tree": 6
+    },
+    "groundTile": 116,
+    "mainPathSize": 3,
+    "blockMapBorder": true,
+    "freeSpaceTilesQuantity": 2,
+    "variableTilesPercentage": 15.0,
+    "pathTile": 121,
+    "collisionLayersForPaths": ["change-points", "collisions", "tree-base"],
+    "randomGroundTiles": [26, 27, 28, 29, 30, 36, 37, 38, 39, 50, 51, 52, 53],
+    "surroundingTiles": {
+        "-1,-1": 127,
+        "-1,0": 124,
+        "-1,1": 130,
+        "0,-1": 126,
+        "0,1": 129,
+        "1,-1": 132,
+        "1,0": 131,
+        "1,1": 133
+    },
+    "corners": {
+        "-1,-1": 285,
+        "-1,1": 284,
+        "1,-1": 283,
+        "1,1": 282
+    },
+    "layerElementsFiles": {
+        "house1": "house-001.json",
+        "house2": "house-002.json",
+        "tree": "tree.json"
+    }
+}
