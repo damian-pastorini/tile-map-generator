@@ -6,10 +6,10 @@
     "variableTilesPercentage": 15,
     "collisionLayersForPaths": ["change-points", "collisions", "tree-base"],
     "mapsInformation": [
-        {"mapFileName": "town-001", "mapTitle": "Town 1"},
-        {"mapFileName": "town-002", "mapTitle": "Town 2"},
-        {"mapFileName": "town-003", "mapTitle": "Town 3"},
-        {"mapFileName": "town-004", "mapTitle": "Town 4"}
+        {"mapName": "town-001", "mapTitle": "Town 1"},
+        {"mapName": "town-002", "mapTitle": "Town 2"},
+        {"mapName": "town-003", "mapTitle": "Town 3"},
+        {"mapName": "town-004", "mapTitle": "Town 4"}
     ],
     "associationsProperties": {
         "generateElementsPath": false,

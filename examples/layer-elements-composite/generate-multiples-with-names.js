@@ -8,13 +8,13 @@ const { RandomMapGenerator} = require('../../lib/random-map-generator');
 const tileMapJSON = require('./reldens-town-composite.json');
 const rootFolder = __dirname;
 
-const execute = async () => {
+let execute = async () => {
     let generators = {};
-    for(let mapFileName of ['map-001', 'map-002', 'map-003']){
-        generators[mapFileName] = new RandomMapGenerator();
-        await generators[mapFileName].fromElementsProvider({
+    for(let mapName of ['map-001', 'map-002', 'map-003']){
+        generators[mapName] = new RandomMapGenerator();
+        await generators[mapName].fromElementsProvider({
             tileMapJSON: JSON.parse(JSON.stringify(tileMapJSON)),
-            mapFileName,
+            mapName,
             rootFolder,
             factor: 2,
             mainPathSize: 3,
@@ -23,7 +23,7 @@ const execute = async () => {
             variableTilesPercentage: 15,
             collisionLayersForPaths: ['change-points', 'collisions', 'tree-base']
         });
-        await generators[mapFileName].generate();
+        await generators[mapName].generate();
     }
 };
 

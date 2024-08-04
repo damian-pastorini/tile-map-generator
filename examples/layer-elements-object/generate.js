@@ -11,7 +11,7 @@ const layerElements = {
     tree: require('./tree.json').layers
 };
 
-const mapData = {
+let mapData = {
     rootFolder: __dirname,
     tileSize: 32,
     tileSheetPath: 'tilesheet.png',
@@ -51,8 +51,8 @@ const mapData = {
     }
 };
 
-const execute = async () => {
-    const generator = new RandomMapGenerator(mapData);
+let execute = async () => {
+    let generator = new RandomMapGenerator(mapData);
     await generator.generate();
 };
 

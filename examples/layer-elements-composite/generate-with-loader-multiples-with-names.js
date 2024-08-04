@@ -6,7 +6,7 @@
 
 const { MultipleByLoaderGenerator } = require('../../lib/generator/multiple-by-loader-generator');
 
-const execute = async () => {
+let execute = async () => {
     let generator = new MultipleByLoaderGenerator({
         loaderData: {
             rootFolder: __dirname,

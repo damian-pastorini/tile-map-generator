@@ -8,7 +8,7 @@ const { RandomMapGenerator} = require('../../lib/random-map-generator');
 const tileMapJSON = require('./reldens-town-composite.json');
 const rootFolder = __dirname;
 
-const execute = async () => {
+let execute = async () => {
     let generator = new RandomMapGenerator();
     await generator.fromElementsProvider({
         tileMapJSON,
