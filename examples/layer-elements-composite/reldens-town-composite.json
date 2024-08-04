@@ -1470,7 +1470,7 @@
  "nextobjectid":10,
  "orientation":"orthogonal",
  "renderorder":"right-down",
- "tiledversion":"1.10.2",
+ "tiledversion":"git",
  "tileheight":16,
  "tilesets":[
         {
@@ -1502,6 +1502,11 @@
                 {
                  "id":41,
                  "properties":[
+                        {
+                         "name":"groundSpots",
+                         "type":"string",
+                         "value":"respawnPunchTrees"
+                        }, 
                         {
                          "name":"key",
                          "type":"string",
