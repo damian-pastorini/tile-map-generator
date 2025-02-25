@@ -14,8 +14,6 @@
         "tree": 6
     },
     "groundTile": 116,
-    "mainPathSize": 0,
-    "generateElementsPath": false,
     "blockMapBorder": true,
     "freeSpaceTilesQuantity": 2,
     "variableTilesPercentage": 15.0,
