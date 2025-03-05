@@ -248,6 +248,11 @@
          "opacity":1,
          "properties":[
                 {
+                 "name":"allowPathsInFreeSpace",
+                 "type":"bool",
+                 "value":false
+                }, 
+                {
                  "name":"quantity",
                  "type":"int",
                  "value":3
@@ -331,6 +336,11 @@
          "name":"root-02-collisions",
          "opacity":1,
          "properties":[
+                {
+                 "name":"allowPathsInFreeSpace",
+                 "type":"bool",
+                 "value":false
+                }, 
                 {
                  "name":"quantity",
                  "type":"int",
@@ -539,6 +549,11 @@
          "opacity":1,
          "properties":[
                 {
+                 "name":"allowPathsInFreeSpace",
+                 "type":"bool",
+                 "value":false
+                }, 
+                {
                  "name":"quantity",
                  "type":"int",
                  "value":4
@@ -661,6 +676,11 @@
          "name":"tree-03-collisions",
          "opacity":1,
          "properties":[
+                {
+                 "name":"allowPathsInFreeSpace",
+                 "type":"bool",
+                 "value":false
+                }, 
                 {
                  "name":"quantity",
                  "type":"int",
