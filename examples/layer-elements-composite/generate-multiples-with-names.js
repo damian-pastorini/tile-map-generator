@@ -26,9 +26,9 @@ let execute = async () => {
             groundSpots: {
                 respawnPunchTrees: {
                     layerName: 'respawn-area-monsters-lvl-1-2',
-                    width: 10,
-                    height: 10,
-                    markPercentage: 80,
+                    width: 50,
+                    height: 50,
+                    markPercentage: 50,
                     quantity: 3,
                     walkable: true
                 },
