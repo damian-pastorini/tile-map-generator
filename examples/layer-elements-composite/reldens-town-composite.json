@@ -426,6 +426,11 @@
          "opacity":1,
          "properties":[
                 {
+                 "name":"freeSpaceAround",
+                 "type":"int",
+                 "value":0
+                }, 
+                {
                  "name":"quantity",
                  "type":"int",
                  "value":6
@@ -552,6 +557,11 @@
                  "name":"allowPathsInFreeSpace",
                  "type":"bool",
                  "value":false
+                }, 
+                {
+                 "name":"freeSpaceAround",
+                 "type":"int",
+                 "value":0
                 }, 
                 {
                  "name":"quantity",

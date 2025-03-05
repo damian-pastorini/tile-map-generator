@@ -10,7 +10,7 @@ const rootFolder = __dirname;
 
 let execute = async () => {
     let generators = {};
-    for(let mapName of ['map-001']){ // , 'map-002', 'map-003'
+    for(let mapName of ['map-001', 'map-002', 'map-003']){
         generators[mapName] = new RandomMapGenerator();
         await generators[mapName].fromElementsProvider({
             tileMapJSON: JSON.parse(JSON.stringify(tileMapJSON)),
@@ -20,7 +20,7 @@ let execute = async () => {
             factor: 2,
             mainPathSize: 3,
             blockMapBorder: true,
-            freeSpaceTilesQuantity: 1,
+            freeSpaceTilesQuantity: 2,
             variableTilesPercentage: 5,
             collisionLayersForPaths: ['change-points', 'collisions', 'tree-base'],
             groundSpots: {
@@ -40,15 +40,15 @@ let execute = async () => {
                     isElement: true,
                     walkable: false,
                     applyCornersTiles: true,
-                    freeSpaceAround: 2,
+                    freeSpaceAround: 1,
                     allowPathsInFreeSpace: false,
                 },
                 riverFull: {
                     layerName: 'river-area-full',
                     surroundingTilesPrefix: 'river',
-                    width: 6,
-                    height: 6,
-                    markPercentage: 100,
+                    width: 10,
+                    height: 10,
+                    markPercentage: 20,
                     isElement: true,
                     walkable: false,
                     applyCornersTiles: true,
