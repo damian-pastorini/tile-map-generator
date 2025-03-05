@@ -1995,7 +1995,7 @@
                          "tile":-1
                         }],
                  "name":"river",
-                 "tile":206,
+                 "tile":512,
                  "type":"corner",
                  "wangtiles":[
                         {
