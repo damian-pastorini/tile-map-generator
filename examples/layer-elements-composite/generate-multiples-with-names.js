@@ -14,32 +14,46 @@ let execute = async () => {
         generators[mapName] = new RandomMapGenerator();
         await generators[mapName].fromElementsProvider({
             tileMapJSON: JSON.parse(JSON.stringify(tileMapJSON)),
+            debugPathsGrid: true,
             mapName,
             rootFolder,
             factor: 2,
             mainPathSize: 3,
             blockMapBorder: true,
-            freeSpaceTilesQuantity: 2,
-            variableTilesPercentage: 15,
+            freeSpaceTilesQuantity: 1,
+            variableTilesPercentage: 5,
             collisionLayersForPaths: ['change-points', 'collisions', 'tree-base'],
             groundSpots: {
                 respawnPunchTrees: {
                     layerName: 'respawn-area-monsters-lvl-1-2',
-                    width: 8,
-                    height: 6,
+                    width: 10,
+                    height: 10,
+                    markPercentage: 80,
                     quantity: 3,
-                    mapSpace: 'add',
-                    blockSpace: true,
                     walkable: true
                 },
-                forest: {
-                    layerName: 'forest-collisions',
-                    width: 4,
-                    height: 6,
-                    mapSpace: 'use',
-                    blockSpace: true,
+                river: {
+                    layerName: 'river-area',
+                    width: 20,
+                    height: 20,
+                    markPercentage: 50,
+                    isElement: true,
                     walkable: false,
-                    applyCornersTiles: true
+                    applyCornersTiles: true,
+                    freeSpaceAround: 2,
+                    allowPathsInFreeSpace: false,
+                },
+                riverFull: {
+                    layerName: 'river-area-full',
+                    surroundingTilesPrefix: 'river',
+                    width: 6,
+                    height: 6,
+                    markPercentage: 100,
+                    isElement: true,
+                    walkable: false,
+                    applyCornersTiles: true,
+                    freeSpaceAround: 2,
+                    allowPathsInFreeSpace: false,
                 }
             }
         });

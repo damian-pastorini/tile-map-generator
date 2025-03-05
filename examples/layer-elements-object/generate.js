@@ -13,6 +13,7 @@ const layerElements = {
 
 let mapData = {
     rootFolder: __dirname,
+    debugPathsGrid: true,
     tileSize: 32,
     tileSheetPath: 'tilesheet.png',
     tileSheetName: 'tilesheet.png',
@@ -24,6 +25,7 @@ let mapData = {
     spacing: 2,
     layerElements,
     elementsQuantity: {house1: 3, house2: 2, tree: 6},
+    elementsFreeSpaceAround: {house1: 1, house2: 2},
     groundTile: 116,
     mainPathSize: 3,
     blockMapBorder: true,
