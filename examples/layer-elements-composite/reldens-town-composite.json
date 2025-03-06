@@ -1655,7 +1655,69 @@
                         }]
                 }],
          "tilewidth":16,
-         "transparentcolor":"#ffffff"
+         "transparentcolor":"#ffffff",
+         "wangsets":[
+                {
+                 "colors":[
+                        {
+                         "color":"#ff0000",
+                         "name":"path",
+                         "probability":1,
+                         "tile":-1
+                        }],
+                 "name":"path",
+                 "tile":41,
+                 "type":"corner",
+                 "wangtiles":[
+                        {
+                         "tileid":41,
+                         "wangid":[0, 1, 0, 1, 0, 1, 0, 1]
+                        }, 
+                        {
+                         "tileid":334,
+                         "wangid":[0, 0, 0, 1, 0, 0, 0, 0]
+                        }, 
+                        {
+                         "tileid":336,
+                         "wangid":[0, 0, 0, 0, 0, 1, 0, 1]
+                        }, 
+                        {
+                         "tileid":338,
+                         "wangid":[0, 1, 0, 0, 0, 0, 0, 1]
+                        }, 
+                        {
+                         "tileid":339,
+                         "wangid":[0, 1, 0, 0, 0, 0, 0, 0]
+                        }, 
+                        {
+                         "tileid":340,
+                         "wangid":[0, 0, 0, 0, 0, 0, 0, 1]
+                        }, 
+                        {
+                         "tileid":343,
+                         "wangid":[0, 0, 0, 1, 0, 1, 0, 0]
+                        }, 
+                        {
+                         "tileid":345,
+                         "wangid":[0, 1, 0, 1, 0, 0, 0, 0]
+                        }, 
+                        {
+                         "tileid":346,
+                         "wangid":[0, 1, 0, 0, 0, 1, 0, 1]
+                        }, 
+                        {
+                         "tileid":347,
+                         "wangid":[0, 1, 0, 1, 0, 0, 0, 1]
+                        }, 
+                        {
+                         "tileid":348,
+                         "wangid":[0, 0, 0, 1, 0, 1, 0, 1]
+                        }, 
+                        {
+                         "tileid":349,
+                         "wangid":[0, 1, 0, 1, 0, 1, 0, 0]
+                        }]
+                }]
         }, 
         {
          "columns":69,
@@ -1711,13 +1773,7 @@
                          "duration":200,
                          "tileid":365
                         }],
-                 "id":359,
-                 "properties":[
-                        {
-                         "name":"key",
-                         "type":"string",
-                         "value":"river-corner-top-left"
-                        }]
+                 "id":359
                 }, 
                 {
                  "animation":[
@@ -1733,13 +1789,7 @@
                          "duration":200,
                          "tileid":366
                         }],
-                 "id":360,
-                 "properties":[
-                        {
-                         "name":"key",
-                         "type":"string",
-                         "value":"river-corner-top-right"
-                        }]
+                 "id":360
                 }, 
                 {
                  "animation":[
@@ -1755,13 +1805,7 @@
                          "duration":200,
                          "tileid":416
                         }],
-                 "id":410,
-                 "properties":[
-                        {
-                         "name":"key",
-                         "type":"string",
-                         "value":"river-corner-bottom-left"
-                        }]
+                 "id":410
                 }, 
                 {
                  "animation":[
@@ -1777,13 +1821,7 @@
                          "duration":200,
                          "tileid":417
                         }],
-                 "id":411,
-                 "properties":[
-                        {
-                         "name":"key",
-                         "type":"string",
-                         "value":"river-corner-bottom-right"
-                        }]
+                 "id":411
                 }, 
                 {
                  "animation":[
@@ -1799,13 +1837,7 @@
                          "duration":200,
                          "tileid":466
                         }],
-                 "id":460,
-                 "properties":[
-                        {
-                         "name":"key",
-                         "type":"string",
-                         "value":"river-top-left"
-                        }]
+                 "id":460
                 }, 
                 {
                  "animation":[
@@ -1821,13 +1853,7 @@
                          "duration":200,
                          "tileid":467
                         }],
-                 "id":461,
-                 "properties":[
-                        {
-                         "name":"key",
-                         "type":"string",
-                         "value":"river-top-center"
-                        }]
+                 "id":461
                 }, 
                 {
                  "animation":[
@@ -1843,13 +1869,7 @@
                          "duration":200,
                          "tileid":468
                         }],
-                 "id":462,
-                 "properties":[
-                        {
-                         "name":"key",
-                         "type":"string",
-                         "value":"river-top-right"
-                        }]
+                 "id":462
                 }, 
                 {
                  "animation":[
@@ -1865,13 +1885,7 @@
                          "duration":200,
                          "tileid":517
                         }],
-                 "id":511,
-                 "properties":[
-                        {
-                         "name":"key",
-                         "type":"string",
-                         "value":"river-middle-left"
-                        }]
+                 "id":511
                 }, 
                 {
                  "animation":[
@@ -1887,13 +1901,7 @@
                          "duration":200,
                          "tileid":518
                         }],
-                 "id":512,
-                 "properties":[
-                        {
-                         "name":"groundSpots",
-                         "type":"string",
-                         "value":"river"
-                        }]
+                 "id":512
                 }, 
                 {
                  "animation":[
@@ -1909,13 +1917,7 @@
                          "duration":200,
                          "tileid":519
                         }],
-                 "id":513,
-                 "properties":[
-                        {
-                         "name":"key",
-                         "type":"string",
-                         "value":"river-middle-right"
-                        }]
+                 "id":513
                 }, 
                 {
                  "animation":[
@@ -1931,13 +1933,7 @@
                          "duration":200,
                          "tileid":568
                         }],
-                 "id":562,
-                 "properties":[
-                        {
-                         "name":"key",
-                         "type":"string",
-                         "value":"river-bottom-left"
-                        }]
+                 "id":562
                 }, 
                 {
                  "animation":[
@@ -1953,13 +1949,7 @@
                          "duration":200,
                          "tileid":569
                         }],
-                 "id":563,
-                 "properties":[
-                        {
-                         "name":"key",
-                         "type":"string",
-                         "value":"river-bottom-center"
-                        }]
+                 "id":563
                 }, 
                 {
                  "animation":[
@@ -1975,13 +1965,7 @@
                          "duration":200,
                          "tileid":570
                         }],
-                 "id":564,
-                 "properties":[
-                        {
-                         "name":"key",
-                         "type":"string",
-                         "value":"river-bottom-right"
-                        }]
+                 "id":564
                 }],
          "tilewidth":16,
          "transparentcolor":"#ffffff",
