@@ -10,7 +10,7 @@ const rootFolder = __dirname;
 
 let execute = async () => {
     let generators = {};
-    for(let mapName of ['map-001', 'map-002', 'map-003']){
+    for(let mapName of ['map-001']){ // , 'map-002', 'map-003'
         generators[mapName] = new RandomMapGenerator();
         await generators[mapName].fromElementsProvider({
             tileMapJSON: JSON.parse(JSON.stringify(tileMapJSON)),
