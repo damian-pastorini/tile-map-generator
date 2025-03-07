@@ -23,6 +23,7 @@ let execute = async () => {
             freeSpaceTilesQuantity: 2,
             variableTilesPercentage: 5,
             collisionLayersForPaths: ['change-points', 'collisions', 'tree-base'],
+            autoMergeLayersByKeys: ['base-merge-tree', 'change-points', 'merge-level-1'],
             groundSpots: {
                 respawnPunchTrees: {
                     layerName: 'respawn-area-monsters-lvl-1-2',
