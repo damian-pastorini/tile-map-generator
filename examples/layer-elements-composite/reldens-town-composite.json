@@ -1084,6 +1084,11 @@
          "opacity":1,
          "properties":[
                 {
+                 "name":"mapCentered",
+                 "type":"int",
+                 "value":2
+                }, 
+                {
                  "name":"quantity",
                  "type":"int",
                  "value":3
@@ -1324,9 +1329,14 @@
          "opacity":1,
          "properties":[
                 {
-                 "name":"quantity",
+                 "name":"mapCentered",
                  "type":"int",
                  "value":1
+                }, 
+                {
+                 "name":"quantity",
+                 "type":"int",
+                 "value":2
                 }],
          "type":"tilelayer",
          "visible":true,
