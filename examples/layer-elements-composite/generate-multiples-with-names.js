@@ -43,18 +43,20 @@ let execute = async () => {
                     applyCornersTiles: true,
                     freeSpaceAround: 1,
                     allowPathsInFreeSpace: false,
+                    variableTilesPercentage: 10,
                 },
                 riverFull: {
                     layerName: 'river-area-full',
-                    surroundingTilesPrefix: 'river',
+                    tilesKey: 'river',
                     width: 10,
                     height: 10,
-                    markPercentage: 20,
+                    markPercentage: 30,
                     isElement: true,
                     walkable: false,
                     applyCornersTiles: true,
                     freeSpaceAround: 2,
                     allowPathsInFreeSpace: false,
+                    variableTilesPercentage: 20
                 }
             }
         });
