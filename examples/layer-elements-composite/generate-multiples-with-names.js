@@ -19,6 +19,7 @@ let execute = async () => {
             rootFolder,
             factor: 2,
             mainPathSize: 3,
+            pathSize: 2,
             blockMapBorder: true,
             freeSpaceTilesQuantity: 2,
             variableTilesPercentage: 5,

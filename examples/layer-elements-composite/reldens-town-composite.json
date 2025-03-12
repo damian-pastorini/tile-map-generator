@@ -410,6 +410,11 @@
          "opacity":1,
          "properties":[
                 {
+                 "name":"allowPathsInFreeSpace",
+                 "type":"bool",
+                 "value":false
+                }, 
+                {
                  "name":"freeSpaceAround",
                  "type":"int",
                  "value":0
@@ -759,6 +764,11 @@
          "name":"tree-04-base-merge-tree",
          "opacity":1,
          "properties":[
+                {
+                 "name":"allowPathsInFreeSpace",
+                 "type":"bool",
+                 "value":false
+                }, 
                 {
                  "name":"quantity",
                  "type":"int",
