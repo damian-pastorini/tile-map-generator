@@ -1,0 +1,35 @@
+{
+    "debugPathsGrid": true,
+    "factor": 2,
+    "mainPathSize": 3,
+    "blockMapBorder": true,
+    "freeSpaceTilesQuantity": 5,
+    "variableTilesPercentage": 2,
+    "pathSize": 3,
+    "collisionLayersForPaths": [
+        "change-points",
+        "collisions",
+        "tree-base"
+    ],
+    "mapName": "dungeon-001",
+    "compositeElementsFile": "reldens-town-composite-dungeon.json",
+    "groundSpots": {
+        "caveRooms": {
+            "layerName": "cave-room-respawn-area-monsters-lvl-1-2",
+            "tilesKey": "cave",
+            "width": 20,
+            "height": 20,
+            "markPercentage": 70,
+            "isElement": true,
+            "freeSpaceAround": 0,
+            "quantity": 3,
+            "walkable": true,
+            "applyCornersTiles": true,
+            "allowPathsInFreeSpace": false,
+            "variableTilesPercentage": 10,
+            "placeRandomPath": true,
+            "splitBordersInLayers": true,
+            "borderLayerSuffix": "-collisions"
+        }
+    }
+}
