@@ -5,6 +5,7 @@
     "blockMapBorder": true,
     "freeSpaceTilesQuantity": 5,
     "variableTilesPercentage": 0,
+    "minimumDistanceFromBorders": 2,
     "pathSize": 3,
     "collisionLayersForPaths": [
         "change-points",
