@@ -1209,7 +1209,7 @@
                  "type":"corner",
                  "wangtiles":[
                         {
-                         "tileid":841,
+                         "tileid":856,
                          "wangid":[0, 1, 0, 1, 0, 1, 0, 1]
                         }, 
                         {
