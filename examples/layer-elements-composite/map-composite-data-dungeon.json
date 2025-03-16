@@ -4,7 +4,7 @@
     "mainPathSize": 3,
     "blockMapBorder": true,
     "freeSpaceTilesQuantity": 5,
-    "variableTilesPercentage": 2,
+    "variableTilesPercentage": 0,
     "pathSize": 3,
     "collisionLayersForPaths": [
         "change-points",
@@ -16,7 +16,7 @@
     "groundSpots": {
         "caveRooms": {
             "layerName": "cave-room-respawn-area-monsters-lvl-1-2",
-            "tilesKey": "cave",
+            "tilesKey": "walls",
             "width": 20,
             "height": 20,
             "markPercentage": 70,
