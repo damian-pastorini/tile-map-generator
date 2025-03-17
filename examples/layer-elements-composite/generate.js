@@ -16,7 +16,9 @@ let execute = async () => {
         factor: 2,
         mainPathSize: 3,
         blockMapBorder: true,
-        freeSpaceTilesQuantity: 2,
+        freeSpaceTilesQuantity: 1,
+        minimumElementsFreeSpaceAround: 1,
+        freeTilesMultiplier: 4,
         variableTilesPercentage: 15,
         collisionLayersForPaths: ['change-points', 'collisions', 'tree-base']
     });

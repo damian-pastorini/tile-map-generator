@@ -3,8 +3,10 @@
     "mainPathSize": 3,
     "blockMapBorder": true,
     "freeSpaceTilesQuantity": 2,
+    "minimumElementsFreeSpaceAround": 1,
+    "freeTilesMultiplier": 2,
     "variableTilesPercentage": 15,
     "collisionLayersForPaths": ["change-points", "collisions", "tree-base"],
-    "mapNames": ["map-001", "map-002", "map-003"],
+    "mapNames": ["map-named-001", "map-named-002", "map-named-003"],
     "compositeElementsFile": "reldens-town-composite.json"
 }

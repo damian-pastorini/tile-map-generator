@@ -3,6 +3,8 @@
     "mainPathSize": 3,
     "blockMapBorder": true,
     "freeSpaceTilesQuantity": 2,
+    "minimumElementsFreeSpaceAround": 1,
+    "freeTilesMultiplier": 2,
     "variableTilesPercentage": 15,
     "collisionLayersForPaths": ["change-points", "collisions", "tree-base"],
     "mapsInformation": [
@@ -14,7 +16,9 @@
     "associationsProperties": {
         "generateElementsPath": false,
         "blockMapBorder": true,
-        "freeSpaceTilesQuantity": 0,
+        "freeSpaceTilesQuantity": 1,
+        "minimumElementsFreeSpaceAround": 0,
+        "minimumDistanceFromBorders": 0,
         "variableTilesPercentage": 0,
         "placeElementsOrder": "inOrder",
         "orderElementsBySize": false,

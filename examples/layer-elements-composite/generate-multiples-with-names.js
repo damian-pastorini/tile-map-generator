@@ -23,6 +23,8 @@ let execute = async () => {
             blockMapBorder: true,
             freeSpaceTilesQuantity: 2,
             variableTilesPercentage: 5,
+            minimumElementsFreeSpaceAround: 1,
+            freeTilesMultiplier: 2,
             collisionLayersForPaths: ['change-points', 'collisions', 'tree-base'],
             autoMergeLayersByKeys: ['base-merge-tree', 'change-points', 'merge-level-1'],
             groundSpots: {

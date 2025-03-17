@@ -35,7 +35,9 @@ let execute = async () => {
             factor: 2,
             mainPathSize: 3,
             blockMapBorder: true,
-            freeSpaceTilesQuantity: 2,
+            freeSpaceTilesQuantity: 1,
+            minimumElementsFreeSpaceAround: 1,
+            freeTilesMultiplier: 4,
             variableTilesPercentage: 15,
             collisionLayersForPaths: ['change-points', 'collisions'],
             previousMainPath,
@@ -53,8 +55,10 @@ let execute = async () => {
             {
                 generateElementsPath: false,
                 blockMapBorder: true,
-                freeSpaceTilesQuantity: 0,
+                freeSpaceTilesQuantity: 1,
                 variableTilesPercentage: 0,
+                minimumElementsFreeSpaceAround: 0,
+                minimumDistanceFromBorders: 0,
                 placeElementsOrder: 'inOrder', // this will place the elements in the first available position
                 orderElementsBySize: false, // this will order the elements by size
                 randomizeQuantities: true, // when ordering the elements by size we need to set this "false"
