@@ -5,7 +5,7 @@
     "blockMapBorder": false,
     "freeSpaceTilesQuantity": 2,
     "variableTilesPercentage": 0,
-    "minimumDistanceFromBorders": 2,
+    "minimumDistanceFromBorders": 4,
     "minimumElementsFreeSpaceAround": 2,
     "splitBordersInLayers": true,
     "splitBordersLayerSuffix": "-collisions",
@@ -13,7 +13,7 @@
     "freeTilesMultiplier": 4,
     "freeSpaceMultiplier": 4,
     "placeElementsCloserToBorders": true,
-    "pathSize": 4,
+    "pathSize": 5,
     "collisionLayersForPaths": ["change-points", "collisions", "tree-base"],
     "mapName": "dungeon-001",
     "compositeElementsFile": "reldens-town-composite-dungeon.json",
@@ -23,7 +23,7 @@
             "tilesKey": "cave",
             "width": 30,
             "height": 30,
-            "markPercentage": 70,
+            "markPercentage": 80,
             "isElement": true,
             "freeSpaceAround": 2,
             "quantity": 3,
@@ -33,7 +33,8 @@
             "variableTilesPercentage": 10,
             "placeRandomPath": true,
             "splitBordersInLayers": true,
-            "borderLayerSuffix": "-collisions"
+            "borderLayerSuffix": "-collisions",
+            "addBordersInnerWalls": true
         }
     }
 }
