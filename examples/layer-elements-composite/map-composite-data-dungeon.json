@@ -8,6 +8,8 @@
     "minimumDistanceFromBorders": 2,
     "minimumElementsFreeSpaceAround": 2,
     "splitBordersInLayers": true,
+    "splitBordersLayerSuffix": "-collisions",
+    "removeGroundLayer": true,
     "freeTilesMultiplier": 4,
     "freeSpaceMultiplier": 4,
     "placeElementsCloserToBorders": true,
