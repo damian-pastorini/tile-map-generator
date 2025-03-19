@@ -35,8 +35,9 @@
             "variableTilesPercentage": 10,
             "placeRandomPath": true,
             "splitBordersInLayers": true,
-            "borderLayerSuffix": "-collisions",
-            "addBordersInnerWalls": true
+            "borderLayerSuffix": "-collisions-over-player",
+            "borderInnerWalls": "cave-inner-walls",
+            "wallsLayerSuffix": "-collisions"
         }
     }
 }
