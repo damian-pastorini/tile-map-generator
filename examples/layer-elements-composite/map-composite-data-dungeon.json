@@ -5,14 +5,14 @@
     "blockMapBorder": false,
     "freeSpaceTilesQuantity": 2,
     "variableTilesPercentage": 0,
-    "minimumDistanceFromBorders": 5,
+    "minimumDistanceFromBorders": 8,
     "minimumElementsFreeSpaceAround": 2,
     "splitBordersInLayers": true,
     "splitBordersLayerSuffix": "-collisions",
     "removeGroundLayer": true,
     "applyGroundAsPathTilePostProcess": true,
     "freeTilesMultiplier": 4,
-    "freeSpaceMultiplier": 6,
+    "freeSpaceMultiplier": 7,
     "placeElementsCloserToBorders": true,
     "pathSize": 8,
     "cleanPathTilesFromElements": true,
@@ -28,7 +28,7 @@
             "height": 30,
             "markPercentage": 80,
             "isElement": true,
-            "freeSpaceAround": 5,
+            "freeSpaceAround": 6,
             "quantity": 3,
             "walkable": true,
             "applyCornersTiles": true,
@@ -38,7 +38,9 @@
             "splitBordersInLayers": true,
             "borderLayerSuffix": "-collisions-over-player",
             "borderInnerWalls": "cave-inner-walls",
-            "wallsLayerSuffix": "-collisions"
+            "wallsLayerSuffix": "-collisions",
+            "borderOuterWalls": "cave-outer-walls",
+            "outerWallsLayerSuffix": "-collisions-over-player"
         }
     }
 }
