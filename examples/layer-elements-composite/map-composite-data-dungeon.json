@@ -13,6 +13,8 @@
     "applyGroundAsPathTilePostProcess": true,
     "applyPathsInnerWalls": true,
     "pathsInnerWallsTilesKey": "cave",
+    "applyPathsOuterWalls": true,
+    "pathsOuterWallsTilesKey": "cave",
     "freeTilesMultiplier": 4,
     "freeSpaceMultiplier": 7,
     "placeElementsCloserToBorders": true,
