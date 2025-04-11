@@ -30,7 +30,7 @@
             "tilesKey": "cave",
             "width": 30,
             "height": 20,
-            "markPercentage": 60,
+            "markPercentage": 80,
             "isElement": true,
             "freeSpaceAround": 6,
             "quantity": 3,
