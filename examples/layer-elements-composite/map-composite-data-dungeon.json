@@ -33,7 +33,7 @@
             "markPercentage": 80,
             "isElement": true,
             "freeSpaceAround": 6,
-            "quantity": 3,
+            "quantity": 4,
             "walkable": true,
             "applyCornersTiles": true,
             "allowPathsInFreeSpace": true,
