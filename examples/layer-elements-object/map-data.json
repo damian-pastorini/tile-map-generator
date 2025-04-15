@@ -9,6 +9,7 @@
     "margin": 1,
     "spacing": 2,
     "mainPathSize": 3,
+    "minimumElementsFreeSpaceAround": 1,
     "elementsQuantity": {
         "house1": 3,
         "house2": 2,
@@ -16,7 +17,7 @@
     },
     "groundTile": 116,
     "blockMapBorder": true,
-    "freeSpaceTilesQuantity": 2,
+    "freeSpaceTilesQuantity": 3,
     "variableTilesPercentage": 15.0,
     "pathTile": 121,
     "collisionLayersForPaths": ["change-points", "collisions", "tree-base"],
