@@ -14,7 +14,7 @@ let execute = async () => {
         generators[mapName] = new RandomMapGenerator();
         await generators[mapName].fromElementsProvider({
             tileMapJSON: JSON.parse(JSON.stringify(tileMapJSON)),
-            debugPathsGrid: true,
+            debugPathsGrid: false,
             mapName,
             rootFolder,
             factor: 2,

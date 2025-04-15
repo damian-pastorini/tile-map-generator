@@ -1,5 +1,5 @@
 {
-    "debugPathsGrid": true,
+    "debugPathsGrid": false,
     "factor": 2,
     "mainPathSize": 2,
     "blockMapBorder": false,

@@ -13,7 +13,7 @@ const layerElements = {
 
 let mapData = {
     rootFolder: __dirname,
-    debugPathsGrid: true,
+    debugPathsGrid: false,
     tileSize: 32,
     tileSheetPath: 'tilesheet.png',
     tileSheetName: 'tilesheet.png',
