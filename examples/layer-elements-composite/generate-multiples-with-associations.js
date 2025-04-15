@@ -9,18 +9,18 @@ const { AssociatedMaps } = require('../../lib/generator/associated-maps');
 const tileMapJSON = require('./reldens-town-composite-with-associations.json');
 const rootFolder = __dirname;
 
-const execute = async () => {
+let execute = async () => {
     let generators = {};
     let generatedMaps = {};
     let mapsInformation = [
-        {mapFileName: 'town-001', mapTitle: 'Town 1'},
-        {mapFileName: 'town-002', mapTitle: 'Town 2'},
-        {mapFileName: 'town-003', mapTitle: 'Town 3'},
-        {mapFileName: 'town-004', mapTitle: 'Town 4'}
+        {mapName: 'town-001', mapTitle: 'Town 1'},
+        {mapName: 'town-002', mapTitle: 'Town 2'},
+        {mapName: 'town-003', mapTitle: 'Town 3'},
+        {mapName: 'town-004', mapTitle: 'Town 4'}
     ];
     let i = 0;
     for(let mapInformation of mapsInformation){
-        let {mapFileName, mapTitle} = mapInformation;
+        let {mapName, mapTitle} = mapInformation;
         let previousGenerator = 0 < i ? generators[mapsInformation[i - 1]] : null;
         let previousMainPath = [];
         if (previousGenerator) {
@@ -30,37 +30,41 @@ const execute = async () => {
             // @NOTE: this could be replaced by sc.deepJsonClone(tileMapJSON), but I wanted to show that it must be
             // a deep copy, otherwise the original object would be modified.
             tileMapJSON: JSON.parse(JSON.stringify(tileMapJSON)),
-            mapFileName,
+            mapName,
             rootFolder,
             factor: 2,
             mainPathSize: 3,
             blockMapBorder: true,
-            freeSpaceTilesQuantity: 2,
+            freeSpaceTilesQuantity: 1,
+            minimumElementsFreeSpaceAround: 1,
+            freeTilesMultiplier: 4,
             variableTilesPercentage: 15,
             collisionLayersForPaths: ['change-points', 'collisions'],
             previousMainPath,
             expandElementsSize: 1
         };
-        generators[mapFileName] = new RandomMapGenerator();
-        generators[mapFileName].addMapProperty('mapTitle', 'string', mapTitle);
-        await generators[mapFileName].fromElementsProvider(generationOptions);
-        generatedMaps[mapFileName] = await generators[mapFileName].generate();
+        generators[mapName] = new RandomMapGenerator();
+        generators[mapName].addMapProperty('mapTitle', 'string', mapTitle);
+        await generators[mapName].fromElementsProvider(generationOptions);
+        generatedMaps[mapName] = await generators[mapName].generate();
         let associatedMaps = new AssociatedMaps();
         await associatedMaps.generate(
-            generatedMaps[mapFileName],
-            mapFileName,
+            generatedMaps[mapName],
+            mapName,
             rootFolder,
             {
                 generateElementsPath: false,
                 blockMapBorder: true,
-                freeSpaceTilesQuantity: 0,
+                freeSpaceTilesQuantity: 1,
                 variableTilesPercentage: 0,
+                minimumElementsFreeSpaceAround: 0,
+                minimumDistanceFromBorders: 0,
                 placeElementsOrder: 'inOrder', // this will place the elements in the first available position
                 orderElementsBySize: false, // this will order the elements by size
                 randomizeQuantities: true, // when ordering the elements by size we need to set this "false"
                 applySurroundingPathTiles: false
             },
-            generators[mapFileName]
+            generators[mapName]
         );
         i++;
     }

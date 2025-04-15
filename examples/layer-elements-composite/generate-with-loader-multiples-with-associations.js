@@ -8,7 +8,7 @@ const { MultipleWithAssociationsByLoaderGenerator } = require(
     '../../lib/generator/multiple-with-associations-by-loader-generator'
 );
 
-const execute = async () => {
+let execute = async () => {
     let generator = new MultipleWithAssociationsByLoaderGenerator({
         loaderData: {
             rootFolder: __dirname,

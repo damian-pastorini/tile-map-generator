@@ -10,7 +10,7 @@ const { RandomMapGenerator } = require('../../lib/random-map-generator');
 let execute = async () => {
     let loader = new LayerElementsCompositeLoader({
         rootFolder: __dirname,
-        mapDataFile: 'map-composite-data.json'
+        mapDataFile: 'map-composite-data-dungeon.json'
     });
     await loader.load();
     let generator = new RandomMapGenerator();
