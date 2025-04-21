@@ -1,23 +1,19 @@
-# Logs
+# Logs:
 logs
 *.log
 npm-debug.log*
-
-# Diagnostic reports (https://nodejs.org/api/report.html)
+# Diagnostic reports (https://nodejs.org/api/report.html):
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
-
-# Runtime data
+# Runtime data:
 pids
 *.pid
 *.seed
 *.pid.lock
-
-# Dependency directories
+# Dependency directories:
 node_modules/
-
-# Optional npm cache directory
+# Optional npm cache directory:
 .npm
-
-# Project
+# Project:
+.idea
 **/generated/**/*.png
 **/generated/**/*.json
