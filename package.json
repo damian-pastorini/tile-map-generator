@@ -25,6 +25,9 @@
     "bugs": {
         "url": "https://github.com/damian-pastorini/tile-map-generator/issues"
     },
+    "scripts": {
+        "test": "node tests/run.js"
+    },
     "dependencies": {
         "@reldens/tile-map-optimizer": "^0.24.0",
         "@reldens/utils": "^0.51.0",
