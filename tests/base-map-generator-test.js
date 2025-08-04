@@ -6,6 +6,7 @@
 
 const { RandomMapGenerator } = require('../lib/random-map-generator');
 const { FileHandler } = require('@reldens/server-utils');
+const { Logger } = require('@reldens/utils');
 
 class BaseMapGeneratorTest
 {
@@ -17,6 +18,8 @@ class BaseMapGeneratorTest
         this.passedCount = 0;
         this.originalMathRandom = Math.random;
         this.testDataFolder = FileHandler.joinPaths(__dirname, 'test-data');
+        this.currentTestMethod = '';
+        this.currentSeed = null;
         this.setupTestData();
     }
 
@@ -50,12 +53,29 @@ class BaseMapGeneratorTest
         this.testCount++;
         try {
             await testFn();
-            console.log('✓ PASS:', name);
+            let logMessage = '✓ PASS: '+name;
+            if(this.currentTestMethod){
+                logMessage += ' ('+this.currentTestMethod;
+                if(this.currentSeed){
+                    logMessage += ', seed: '+this.currentSeed;
+                }
+                logMessage += ')';
+            }
+            Logger.log(100, 't', logMessage);
             this.passedCount++;
-            this.testResults.push({name, status: 'PASS'});
+            this.testResults.push({name, status: 'PASS', method: this.currentTestMethod, seed: this.currentSeed});
         } catch(error){
-            console.log('✗ FAIL:', name, '-', error.message);
-            this.testResults.push({name, status: 'FAIL', error: error.message});
+            let logMessage = '✗ FAIL: '+name;
+            if(this.currentTestMethod){
+                logMessage += ' ('+this.currentTestMethod;
+                if(this.currentSeed){
+                    logMessage += ', seed: '+this.currentSeed;
+                }
+                logMessage += ')';
+            }
+            logMessage += ' - '+error.message;
+            Logger.log(100, 't', logMessage);
+            this.testResults.push({name, status: 'FAIL', error: error.message, method: this.currentTestMethod, seed: this.currentSeed});
         }
     }
 
@@ -131,6 +151,9 @@ class BaseMapGeneratorTest
             elementsFreeSpaceAround: {house1: 1, tree: 1},
             groundTile: 116,
             pathTile: 121,
+            mainPathSize: 3,
+            blockMapBorder: true,
+            freeSpaceTilesQuantity: 2,
             surroundingTiles: {
                 '-1,-1': 127, '-1,0': 124, '-1,1': 130,
                 '0,-1': 126, '0,1': 129,
@@ -150,7 +173,7 @@ class BaseMapGeneratorTest
         config.elementsQuantity = {house1: 1, house2: 1, tree: 2};
         config.mainPathSize = 2;
         config.blockMapBorder = true;
-        config.freeSpaceTilesQuantity = 1;
+        config.freeSpaceTilesQuantity = 5;
         config.variableTilesPercentage = 10;
         config.randomGroundTiles = [26, 27, 28, 29, 30];
         return config;
@@ -287,23 +310,24 @@ class BaseMapGeneratorTest
 
     async runAllTests()
     {
-        console.log(`Running tests for ${this.constructor.name}...\n`);
+        Logger.log(100, 't', 'Running tests for '+this.constructor.name);
         let methodNames = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
         let testMethods = methodNames.filter(name =>
             name.startsWith('test') && 'function' === typeof this[name] && name !== 'test'
         );
         for(let methodName of testMethods){
+            this.currentTestMethod = methodName;
+            this.currentSeed = null;
             await this[methodName]();
         }
-        this.printSummary();
+        this.logUnifiedSummary();
     }
 
-    printSummary()
+    logUnifiedSummary()
     {
-        console.log(`\n${this.constructor.name} Summary:`);
-        console.log(`Tests run: ${this.testCount}`);
-        console.log(`Passed: ${this.passedCount}`);
-        console.log(`Failed: ${this.testCount - this.passedCount}`);
+        Logger.log(100, 't', 'Tests run: '+this.testCount);
+        Logger.log(100, 't', 'Passed: '+this.passedCount);
+        Logger.log(100, 't', 'Failed: '+(this.testCount - this.passedCount));
         this.restoreMathRandom();
     }
 
