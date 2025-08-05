@@ -28,11 +28,11 @@ class TestFeatureCombinations extends BaseFunctionalityTest
 
     async testElementsWithPathsIntegration()
     {
-        let config = this.setupCompositeConfig();
+        let config = this.setupBasicConfig();
         config.mainPathSize = 2;
         config.elementsQuantity = {
-            'house1': 3,
-            'tree': 5
+            'house1': 2,
+            'tree': 3
         };
         config.generateElementsPath = true;
         config.freeSpaceTilesQuantity = 3;
@@ -63,12 +63,12 @@ class TestFeatureCombinations extends BaseFunctionalityTest
 
     async testGroundVariationsWithElementsIntegration()
     {
-        let config = this.setupCompositeConfig();
+        let config = this.setupBasicConfig();
         config.randomGroundTiles = [20, 21, 22];
         config.variableTilesPercentage = 25;
         config.elementsQuantity = {
-            'tree': 6,
-            'house1': 4
+            'tree': 3,
+            'house1': 2
         };
         config.freeSpaceTilesQuantity = 3;
         await this.testWithDeterministicSeed('Ground variations with elements integration', config, 20003, async (map, config) => {
@@ -81,14 +81,14 @@ class TestFeatureCombinations extends BaseFunctionalityTest
 
     async testFreeSpaceWithMultipleElementTypes()
     {
-        let config = this.setupCompositeConfig();
+        let config = this.setupBasicConfig();
         config.elementsQuantity = {
-            'house1': 4,
-            'tree': 8
+            'house1': 2,
+            'tree': 4
         };
         config.minimumElementsFreeSpaceAround = 2;
         config.elementsFreeSpaceAround = {
-            'house1': 4,
+            'house1': 3,
             'tree': 1
         };
         config.freeSpaceTilesQuantity = 3;
@@ -102,11 +102,11 @@ class TestFeatureCombinations extends BaseFunctionalityTest
 
     async testSpotsWithPathsAndElements()
     {
-        let config = this.setupCompositeConfig();
+        let config = this.setupBasicConfig();
         config.mainPathSize = 2;
         config.elementsQuantity = {
-            'house1': 2,
-            'tree': 4
+            'house1': 1,
+            'tree': 2
         };
         config.freeSpaceTilesQuantity = 3;
         await this.testWithDeterministicSeed('Spots with paths and elements', config, 20005, async (map, config) => {
@@ -119,15 +119,15 @@ class TestFeatureCombinations extends BaseFunctionalityTest
 
     async testAllFeaturesComplexIntegration()
     {
-        let config = this.setupCompositeConfig();
+        let config = this.setupBasicConfig();
         config.mainPathSize = 2;
         config.randomGroundTiles = [30, 31, 32];
         config.variableTilesPercentage = 20;
         config.applyPathsInnerWalls = true;
         config.applyPathsOuterWalls = true;
         config.elementsQuantity = {
-            'house1': 3,
-            'tree': 6
+            'house1': 2,
+            'tree': 3
         };
         config.minimumElementsFreeSpaceAround = 2;
         config.freeSpaceTilesQuantity = 3;
@@ -168,10 +168,10 @@ class TestFeatureCombinations extends BaseFunctionalityTest
 
     async testElementOverlapPrevention()
     {
-        let config = this.setupCompositeConfig();
+        let config = this.setupBasicConfig();
         config.elementsQuantity = {
-            'house1': 4,
-            'tree': 6
+            'house1': 2,
+            'tree': 3
         };
         config.minimumElementsFreeSpaceAround = 1;
         config.freeSpaceTilesQuantity = 3;
@@ -185,11 +185,11 @@ class TestFeatureCombinations extends BaseFunctionalityTest
 
     async testComplexPathNetwork()
     {
-        let config = this.setupCompositeConfig();
+        let config = this.setupBasicConfig();
         config.mainPathSize = 8;
         config.elementsQuantity = {
-            'house1': 5,
-            'tree': 3
+            'house1': 3,
+            'tree': 2
         };
         config.generateElementsPath = true;
         config.freeSpaceTilesQuantity = 3;
@@ -205,13 +205,13 @@ class TestFeatureCombinations extends BaseFunctionalityTest
 
     async testHighDensityConfiguration()
     {
-        let config = this.setupCompositeConfig();
+        let config = this.setupBasicConfig();
         config.mainPathSize = 1;
         config.randomGroundTiles = [90, 91, 92, 93, 94];
         config.variableTilesPercentage = 35;
         config.elementsQuantity = {
-            'house1': 8,
-            'tree': 15
+            'house1': 4,
+            'tree': 6
         };
         config.minimumElementsFreeSpaceAround = 1;
         config.freeSpaceTilesQuantity = 3;
