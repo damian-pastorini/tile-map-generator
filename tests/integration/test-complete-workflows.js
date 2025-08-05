@@ -47,6 +47,21 @@ class TestCompleteWorkflows extends BaseFunctionalityTest
         config.randomGroundTiles = [26, 27, 28];
         config.elementsQuantity = {house1: 2, tree: 3};
         config.freeSpaceTilesQuantity = 5;
+        config.groundSpots = {
+            'workflow-test-spot': {
+                quantity: 1,
+                width: 4,
+                height: 4,
+                walkable: false,
+                layerName: 'ground-spot-workflow-test',
+                tilesKey: 'workflow-test-spot',
+                spotTile: 116,
+                borderInnerWalls: true,
+                borderOuterWalls: true,
+                applyCornersTiles: true,
+                spotLayers: {'workflow-test-layer': [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]}
+            }
+        };
         await this.testWithDeterministicSeed('Complete validation workflow', config, 99887, async (map, config) => {
             let workflowResults = {
                 isValid: true,
@@ -86,6 +101,21 @@ class TestCompleteWorkflows extends BaseFunctionalityTest
         config.elementsFreeSpaceAround = {house1: 3, tree: 1};
         config.mapCenteredElements = {house1: 1};
         config.freeSpaceTilesQuantity = 3;
+        config.groundSpots = {
+            'edge-case-spot': {
+                quantity: 1,
+                width: 3,
+                height: 3,
+                walkable: false,
+                layerName: 'ground-spot-edge-case',
+                tilesKey: 'edge-case-spot',
+                spotTile: 116,
+                borderInnerWalls: true,
+                borderOuterWalls: true,
+                applyCornersTiles: true,
+                spotLayers: {'edge-case-layer': [1,2,3,4,5,6,7,8,9]}
+            }
+        };
         await this.testWithDeterministicSeed('Feature combinations edge cases', config, 77665, async (map, config) => {
             let combinationResults = {};
             combinationResults.elementPlacement = this.elementPlacementValidator.validateMap(map, config);

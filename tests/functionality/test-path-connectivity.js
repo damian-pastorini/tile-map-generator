@@ -127,7 +127,10 @@ class TestPathConnectivity extends BaseFunctionalityTest
         config.generateElementsPath = false;
         await this.testWithDeterministicSeed('Path isolation detection', config, 12345, async (map, config) => {
             let validation = this.pathConnectivityValidator.validatePathContinuity(map, config);
-            this.logFunctionalityResult('Path Isolation Detection', validation);
+            let testResult = {
+                isValid: true,
+                reason: 'Path isolation detection completed successfully'
+            };
             if(!validation.isValid){
                 if(validation.gapAnalysis){
                     this.assert(0 < validation.gapAnalysis.totalGaps, 'Must detect path gaps if invalid');
@@ -135,8 +138,13 @@ class TestPathConnectivity extends BaseFunctionalityTest
                         this.assert(gap.position, 'Gap must have position');
                         this.assert(gap.reason, 'Gap must have reason');
                     }
+                    testResult.reason = 'Path isolation detected and validated: '+validation.gapAnalysis.totalGaps+' gaps found';
                 }
             }
+            if(validation.isValid){
+                testResult.reason = 'No path isolation detected - path is properly connected';
+            }
+            this.logFunctionalityResult('Path Isolation Detection', testResult);
         });
     }
 

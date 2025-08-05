@@ -22,6 +22,20 @@ class TestWallsGeneration extends BaseFunctionalityTest
         let compositePath = testDataFolder+'/reldens-town-composite.json';
         if(!require('@reldens/server-utils').FileHandler.exists(compositePath)){
             let config = this.setupBasicConfig();
+            config.groundSpots = {
+                'wall-test-spot': {
+                    quantity: 1,
+                    width: 5,
+                    height: 5,
+                    walkable: false,
+                    layerName: 'ground-spot-wall-test',
+                    tilesKey: 'wall-test-spot',
+                    spotTile: 116,
+                    borderInnerWalls: true,
+                    borderOuterWalls: true,
+                    applyCornersTiles: true
+                }
+            };
             config.applyPathsInnerWalls = true;
             config.applyPathsOuterWalls = true;
             config.freeSpaceTilesQuantity = 3;
@@ -32,9 +46,7 @@ class TestWallsGeneration extends BaseFunctionalityTest
             tileMapJSON,
             rootFolder: testDataFolder,
             factor: 1,
-            elementsQuantity: {'house-01': 1, 'tree-base': 1},
-            applyPathsInnerWalls: true,
-            applyPathsOuterWalls: true
+            elementsQuantity: {'house-01': 1, 'tree-base': 1}
         };
     }
 
