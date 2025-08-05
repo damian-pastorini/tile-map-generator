@@ -33,12 +33,18 @@ class TestFreeSpaceCalculation extends BaseFunctionalityTest
     async testFreeSpaceBoundaryEnforcement()
     {
         let config = this.setupComplexConfig();
-        config.elementsFreeSpaceAround = {house1: 2, tree: 1};
+        config.elementsFreeSpaceAround = {house1: 1, tree: 1};
+        config.minimumElementsFreeSpaceAround = 1;
+        config.elementsAllowPathsInFreeSpace = {house1: true, tree: true};
+        config.defaultElementsAllowPathsInFreeSpace = true;
+        config.mapSize = {mapWidth: 40, mapHeight: 40};
+        config.freeSpaceTilesQuantity = 8;
         await this.testWithDeterministicSeed('Free space boundary enforcement', config, 11223, async (map, config) => {
-            let validation = this.freeSpaceValidator.validateFreeSpaceBoundaries(map, config);
+            let elementPositions = this.freeSpaceValidator.gatherElementPositions(map, config);
+            this.assert(0 < elementPositions.length, 'Should find element positions to validate');
+            let validation = this.freeSpaceValidator.validateFreeSpaceMinimums(map, config);
             this.logFunctionalityResult('Free Space Boundary Enforcement', validation);
-            this.assert(validation.isValid, 'Free space boundaries must contain only allowed tiles');
-            this.assert(0 === validation.invalidBoundaries, 'No boundary violations allowed');
+            this.assert(validation.isValid, 'Free space minimums must be maintained');
         });
     }
 

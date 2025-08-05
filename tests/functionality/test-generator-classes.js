@@ -40,13 +40,11 @@ class TestGeneratorClasses extends BaseFunctionalityTest
 
     async testMultipleByLoaderGenerator()
     {
-        await this.test('Multiple by loader generator', async () => {
-            let validation = this.generatorClassesValidator.validateMultipleByLoaderGenerator(this.testDataFolder);
-            this.logFunctionalityResult('Multiple By Loader Generator', validation);
-            this.assert(validation.isValid, 'Multiple loader must handle batch processing');
-            this.assert(validation.multipleFileHandling, 'Multiple file handling must work');
-            this.assert(validation.batchProcessing, 'Batch processing must work');
-        });
+        let validation = this.generatorClassesValidator.validateMultipleByLoaderGenerator(this.testDataFolder, 2);
+        this.logFunctionalityResult('Multiple By Loader Generator', validation);
+        this.assert(validation.isValid, 'Multiple loader must handle batch processing');
+        this.assert(validation.multipleFileHandling, 'Must handle multiple files');
+        this.assert(validation.batchProcessing, 'Must process batch configuration');
     }
 
     async testMultipleWithAssociationsByLoaderGenerator()

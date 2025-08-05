@@ -37,7 +37,7 @@ class BaseFunctionalityTest extends BaseMapGeneratorTest
                 if(!result.map){
                     let validationError = this.getLastValidationError(config);
                     let errorMessage = validationError || 'Map generation failed - unknown error';
-                    Logger.log(100, 't', 'Map generation failed for test: '+testName+' - '+errorMessage);
+                    Logger.log(100, '', 'Map generation failed for test: '+testName+' - '+errorMessage);
                     throw new Error(errorMessage);
                 }
                 await testFunction(result.map, config, result.generator);
@@ -84,7 +84,7 @@ class BaseFunctionalityTest extends BaseMapGeneratorTest
         if(this.currentTestMethod){
             logMessage += ' ['+this.currentTestMethod+']';
         }
-        Logger.log(100, 't', logMessage);
+        Logger.log(100, '', logMessage);
     }
 
 }

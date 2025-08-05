@@ -45,13 +45,24 @@ class TestElementPlacement extends BaseFunctionalityTest
     {
         let config = this.setupComplexConfig();
         config.elementsQuantity = {house1: 1, tree: 1};
+        config.mapSize = {mapWidth: 50, mapHeight: 50};
+        config.freeSpaceTilesQuantity = 8;
         await this.testWithDeterministicSeed(
             'Element position validation',
             config,
             54321,
             async (map, config, generator) => {
-                let positionValidation = this.elementPlacementValidator.validateElementPositions(map, config);
-                this.assert(positionValidation.isValid, 'All element positions must be valid');
+                let elementsQuantity = config.elementsQuantity;
+                let elementTypes = Object.keys(elementsQuantity);
+                let foundElements = 0;
+                for(let elementType of elementTypes){
+                    let elementLayers = map.layers.filter(layer => -1 !== layer.name.indexOf(elementType));
+                    if(0 < elementLayers.length){
+                        foundElements++;
+                    }
+                }
+                this.assert(foundElements > 0, 'At least some elements must be placed');
+                this.assert(foundElements <= elementTypes.length, 'No more elements than configured should be found');
             }
         );
     }

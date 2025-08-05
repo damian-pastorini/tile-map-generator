@@ -61,7 +61,7 @@ class BaseMapGeneratorTest
                 }
                 logMessage += ')';
             }
-            Logger.log(100, 't', logMessage);
+            Logger.log(100, '', logMessage);
             this.passedCount++;
             this.testResults.push({name, status: 'PASS', method: this.currentTestMethod, seed: this.currentSeed});
         } catch(error){
@@ -74,7 +74,7 @@ class BaseMapGeneratorTest
                 logMessage += ')';
             }
             logMessage += ' - '+error.message;
-            Logger.log(100, 't', logMessage);
+            Logger.log(100, '', logMessage);
             this.testResults.push({name, status: 'FAIL', error: error.message, method: this.currentTestMethod, seed: this.currentSeed});
         }
     }
@@ -310,7 +310,7 @@ class BaseMapGeneratorTest
 
     async runAllTests()
     {
-        Logger.log(100, 't', 'Running tests for '+this.constructor.name);
+        Logger.log(100, '', 'Running tests for '+this.constructor.name);
         let methodNames = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
         let testMethods = methodNames.filter(name =>
             name.startsWith('test') && 'function' === typeof this[name] && name !== 'test'
@@ -325,9 +325,9 @@ class BaseMapGeneratorTest
 
     logUnifiedSummary()
     {
-        Logger.log(100, 't', 'Tests run: '+this.testCount);
-        Logger.log(100, 't', 'Passed: '+this.passedCount);
-        Logger.log(100, 't', 'Failed: '+(this.testCount - this.passedCount));
+        Logger.log(100, '', 'Tests run: '+this.testCount);
+        Logger.log(100, '', 'Passed: '+this.passedCount);
+        Logger.log(100, '', 'Failed: '+(this.testCount - this.passedCount));
         this.restoreMathRandom();
     }
 

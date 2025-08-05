@@ -109,7 +109,7 @@ class TestSpotsGeneration extends BaseFunctionalityTest
         let config = this.setupSpotsConfig();
         config.mainPathSize = 3;
         await this.testWithDeterministicSeed('Spot connectivity to path', config, 55566, async (map, config) => {
-            let validation = this.spotsValidator.validateSpotConnectivity(map, config);
+            let validation = this.spotsValidator.validateSpotConnectivity(map, config, 15);
             this.logFunctionalityResult('Spot Connectivity To Path', validation);
             this.assert(validation.isValid, 'All spots must be connected to path network');
             this.assertEqual(validation.connectivityPercentage, 100, 'Connectivity must be 100%');

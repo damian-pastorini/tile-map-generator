@@ -106,7 +106,7 @@ class TestCompleteWorkflows extends BaseFunctionalityTest
     {
         let minimalConfig = this.setupBasicConfig();
         minimalConfig.layerElements = {};
-        minimalConfig.elementsQuantity = {};
+        minimalConfig.elementsQuantity = {dummy: 0};
         await this.testWithDeterministicSeed('Boundary conditions', minimalConfig, 55443, async (map, config) => {
             let boundaryResults = {
                 isValid: true,

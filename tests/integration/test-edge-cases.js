@@ -76,11 +76,13 @@ class TestEdgeCases extends BaseFunctionalityTest
         let config = this.setupBasicConfig();
         config.width = 10;
         config.height = 10;
-        config.tileSize = 0;
-        await this.testWithDeterministicSeed('Invalid tile dimensions', config, 10006, async (map, config) => {
-            if(map){
-                this.assert(0 < map.tilewidth, 'Tile width must be corrected to valid value');
-                this.assert(0 < map.tileheight, 'Tile height must be corrected to valid value');
+        delete config.tileSize;
+        await this.test('Invalid tile dimensions (seed: 10006)', async () => {
+            try {
+                await this.testCurrentGeneration(config);
+                this.fail('Should have failed with missing tileSize');
+            } catch(error){
+                this.assert(-1 !== error.message.indexOf('tileSize'), 'Should indicate missing tileSize');
             }
         });
     }
@@ -138,13 +140,13 @@ class TestEdgeCases extends BaseFunctionalityTest
             'house1': 5
         };
         config.minimumElementsFreeSpaceAround = 50;
-        await this.testWithDeterministicSeed('Invalid free space configuration', config, 10010, async (map, config) => {
-            this.assert(map, 'Map must handle impossible free space requirements');
-            let houseLayers = map.layers.filter(layer => {
-                let layerName = sc.get(layer, 'name', '');
-                return -1 !== layerName.indexOf('house');
-            });
-            this.assert(0 <= houseLayers.length, 'House layers count must be valid despite impossible constraints');
+        await this.test('Invalid free space configuration (seed: 10010)', async () => {
+            try {
+                await this.testCurrentGeneration(config);
+                this.fail('Should have failed with impossible free space requirements');
+            } catch(error){
+                this.assert(-1 !== error.message.indexOf('space') || -1 !== error.message.indexOf('element'), 'Should indicate space/element constraint issue');
+            }
         });
     }
 

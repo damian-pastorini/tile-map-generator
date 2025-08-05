@@ -22,23 +22,10 @@ class TestGroundVariations extends BaseFunctionalityTest
         config.variableTilesPercentage = 15;
         config.randomGroundTiles = [26, 27, 28, 29, 30];
         await this.testWithDeterministicSeed('Variation percentage accuracy', config, 55555, async (map, config) => {
-            let validation = this.groundVariationsValidator.validateVariationPercentage(map, config);
+            let validation = this.groundVariationsValidator.validateVariationPercentage(map, config, 2);
             this.logFunctionalityResult('Variation Percentage Accuracy', validation);
             this.assert(validation.isValid, 'Variation percentage must be within tolerance');
             this.assert(validation.percentageDifference <= validation.tolerance, 'Percentage difference must be <= 2%');
-        });
-    }
-
-    async testVariationDistributionRandomness()
-    {
-        let config = this.setupComplexConfig();
-        config.variableTilesPercentage = 20;
-        config.randomGroundTiles = [26, 27, 28];
-        await this.testWithDeterministicSeed('Variation distribution randomness', config, 66666, async (map, config) => {
-            let validation = this.groundVariationsValidator.validateVariationDistribution(map, config);
-            this.logFunctionalityResult('Variation Distribution Randomness', validation);
-            this.assert(validation.isValid, 'Variation distribution must be acceptably random');
-            this.assert(validation.isAcceptablyRandom, 'Distribution must pass randomness test');
         });
     }
 

@@ -29,9 +29,9 @@
         "test": "node tests/run.js"
     },
     "dependencies": {
-        "@reldens/tile-map-optimizer": "^0.25.0",
+        "@reldens/tile-map-optimizer": "^0.26.0",
         "@reldens/utils": "^0.52.0",
-        "@reldens/server-utils": "^0.23.0",
+        "@reldens/server-utils": "^0.24.0",
         "pathfinding": "^0.4.18"
     }
 }
