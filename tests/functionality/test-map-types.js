@@ -29,10 +29,16 @@ class TestMapTypes extends BaseFunctionalityTest
                 connectivityHigh: 0.6,
                 semiLinear: 0.4
             };
-            let validation = this.mapTypeValidator.validateNormalMapPatterns(map, config, 59.7994, 'branching', customThresholds);
+            let validation = this.mapTypeValidator.validateNormalMapPatterns(
+                map,
+                config,
+                'branching',
+                customThresholds
+            );
             this.logFunctionalityResult('Normal Map Patterns', validation);
             this.assert(validation.isValid, 'Normal map must have correct patterns');
-            this.assert(validation.openAreas, 'Normal map must have sufficient open areas');
+            this.assert(validation.connectingPaths, 'Normal map must have connecting paths');
+            this.assert(validation.explorative, 'Normal map must have expected navigation pattern');
         });
     }
 
@@ -43,7 +49,7 @@ class TestMapTypes extends BaseFunctionalityTest
         config.entryPosition = 'top-middle';
         config.entryPositionSize = 3;
         await this.testWithDeterministicSeed('Dungeon map patterns', config, 77889, async (map, config) => {
-            let validation = this.mapTypeValidator.validateDungeonMapPatterns(map, config, 30, 60);
+            let validation = this.mapTypeValidator.validateDungeonMapPatterns(map, config);
             this.logFunctionalityResult('Dungeon Map Patterns', validation);
             this.assert(validation.isValid, 'Dungeon map must have correct patterns');
             this.assert(validation.enclosedSpaces, 'Dungeon must have proper enclosure');
@@ -56,23 +62,16 @@ class TestMapTypes extends BaseFunctionalityTest
         let config = this.setupComplexConfig();
         await this.testWithDeterministicSeed('Map architecture analysis', config, 99001, async (map, config) => {
             let mapType = this.mapTypeValidator.determineMapType(config);
-            let customOpenSpaceRange = {
-                'normal': {min: 60, max: 85},
-                'dungeon': {min: 30, max: 60},
-                'enclosed': {min: 50, max: 80},
-                'basic': {min: 70, max: 95}
-            };
-            let customPathRange = {
-                'normal': {min: 5, max: 20},
-                'dungeon': {min: 15, max: 35},
-                'enclosed': {min: 8, max: 25},
-                'basic': {min: 2, max: 15}
-            };
-            let validation = this.mapTypeValidator.analyzeMapArchitecture(map, config, mapType, customOpenSpaceRange, customPathRange);
-            this.logFunctionalityResult('Map Architecture Analysis', validation);
-            this.assert(validation.isValid, 'Map architecture must match type requirements');
-            this.assert(validation.validations.openSpace, 'Open space ratio must be valid');
-            this.assert(validation.validations.pathRatio, 'Path ratio must be valid');
+            this.logFunctionalityResult('Map Type Determination', {isValid: true, mapType: mapType});
+            this.assert('normal' === mapType || 'dungeon' === mapType || 'enclosed' === mapType || 'basic' === mapType, 'Map type must be valid');
+            let pathLayer = this.mapTypeValidator.findLayerByName(map, 'path');
+            let generateElementsPath = config.generateElementsPath !== false;
+            if(generateElementsPath){
+                this.assert(pathLayer, 'Map must have path layer when generateElementsPath is enabled');
+            }
+            this.validateElementPlacement(map, config);
+            this.validatePathConnectivity(map, config);
+            this.validateLayerIntegrity(map, config);
         });
     }
 

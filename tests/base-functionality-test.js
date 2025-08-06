@@ -9,6 +9,7 @@ const { MapValidator } = require('../lib/validator/map-validator');
 const { GraphAlgorithms } = require('../lib/utilities/graph-algorithms');
 const { DistanceCalculator } = require('../lib/utilities/distance-calculator');
 const { OptionsValidator } = require('../lib/validator/options-validator');
+const { RandomMapGenerator } = require('../lib/random-map-generator');
 const { Logger } = require('@reldens/utils');
 
 class BaseFunctionalityTest extends BaseMapGeneratorTest
@@ -53,15 +54,17 @@ class BaseFunctionalityTest extends BaseMapGeneratorTest
         let generator = null;
         let map = null;
         if(config.tileMapJSON){
-            let RandomMapGenerator = require('../lib/random-map-generator').RandomMapGenerator;
             generator = new RandomMapGenerator();
             await generator.fromElementsProvider(config);
-            map = await generator.generate();
         }
         if(!config.tileMapJSON){
-            let RandomMapGenerator = require('../lib/random-map-generator').RandomMapGenerator;
             generator = new RandomMapGenerator(config);
+        }
+        if(generator){
             map = await generator.generate();
+            if(generator.mapFileName){
+                this.currentMapName = generator.mapFileName;
+            }
         }
         return {map, generator};
     }

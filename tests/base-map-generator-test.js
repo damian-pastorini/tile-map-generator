@@ -19,6 +19,7 @@ class BaseMapGeneratorTest
         this.originalMathRandom = Math.random;
         this.testDataFolder = FileHandler.joinPaths(__dirname, 'test-data');
         this.currentTestMethod = '';
+        this.currentMapName = '';
         this.currentSeed = null;
         this.setupTestData();
     }
@@ -53,30 +54,45 @@ class BaseMapGeneratorTest
         this.testCount++;
         try {
             await testFn();
-            let logMessage = '✓ PASS: '+name;
-            if(this.currentTestMethod){
-                logMessage += ' ('+this.currentTestMethod;
-                if(this.currentSeed){
-                    logMessage += ', seed: '+this.currentSeed;
-                }
-                logMessage += ')';
-            }
+            let logMessage = this.generateLogMessage('✓ PASS: ', name);
             Logger.log(100, '', logMessage);
             this.passedCount++;
-            this.testResults.push({name, status: 'PASS', method: this.currentTestMethod, seed: this.currentSeed});
+            this.testResults.push({
+                name,
+                status: 'PASS',
+                method: this.currentTestMethod,
+                seed: this.currentSeed,
+                mapName: this.currentMapName
+            });
         } catch(error){
-            let logMessage = '✗ FAIL: '+name;
-            if(this.currentTestMethod){
-                logMessage += ' ('+this.currentTestMethod;
-                if(this.currentSeed){
-                    logMessage += ', seed: '+this.currentSeed;
-                }
-                logMessage += ')';
-            }
+            let logMessage = this.generateLogMessage('✗ FAIL: ', name);
             logMessage += ' - '+error.message;
             Logger.log(100, '', logMessage);
-            this.testResults.push({name, status: 'FAIL', error: error.message, method: this.currentTestMethod, seed: this.currentSeed});
+            this.testResults.push({
+                name,
+                status: 'FAIL',
+                error: error.message,
+                method: this.currentTestMethod,
+                seed: this.currentSeed,
+                mapName: this.currentMapName
+            });
         }
+    }
+
+    generateLogMessage(prefix, name)
+    {
+        let logMessage = prefix + name;
+        if(this.currentTestMethod){
+            logMessage += ' (' + this.currentTestMethod;
+            if (this.currentSeed) {
+                logMessage += ', seed: ' + this.currentSeed;
+            }
+            if (this.currentMapName) {
+                logMessage += ' - ' + this.currentMapName;
+            }
+            logMessage += ')';
+        }
+        return logMessage;
     }
 
     assert(condition, message)
