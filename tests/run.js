@@ -5,7 +5,7 @@
  */
 
 const { FileHandler } = require('@reldens/server-utils');
-const { Logger } = require('@reldens/utils');
+const { Logger, sc } = require('@reldens/utils');
 
 Logger.activeLogLevels = [100];
 Logger.setLogLevel(100);
@@ -18,6 +18,7 @@ async function runTests()
         Logger.log(100, '', '='.repeat(60));
         Logger.log(100, '', 'TESTING RANDOM MAP GENERATOR');
         Logger.log(100, '', '='.repeat(60)+'\n');
+        Logger.log(100, '', 'Test execution started: '+sc.formatDate(new Date()));
         let mainTestFiles = await getTestFilesFromDirectory(__dirname);
         let functionalityTestFiles = await getTestFilesFromDirectory(FileHandler.joinPaths(__dirname, 'functionality'));
         let integrationTestFiles = await getTestFilesFromDirectory(FileHandler.joinPaths(__dirname, 'integration'));
@@ -26,6 +27,8 @@ async function runTests()
             ...functionalityTestFiles.map(file => ({file, path: FileHandler.joinPaths(__dirname, 'functionality')})),
             ...integrationTestFiles.map(file => ({file, path: FileHandler.joinPaths(__dirname, 'integration')}))
         ];
+        let totalTests = 0;
+        let totalPassed = 0;
         for(let testInfo of allTestFiles){
             let testDisplayName = getTestDisplayName(testInfo.file);
             Logger.log(100, '', 'Running '+testDisplayName+' ('+testInfo.file+')');
@@ -34,8 +37,10 @@ async function runTests()
             let TestClass = testModule[TestClassName];
             let testInstance = new TestClass();
             await testInstance.runAllTests();
+            totalTests += testInstance.testCount;
+            totalPassed += testInstance.passedCount;
         }
-        Logger.log(100, '', 'All tests completed successfully!');
+        Logger.log(100, '', 'All tests executed - '+totalPassed+'/'+totalTests+' succeed.');
     } catch(error){
         Logger.log(100, '', 'Test execution failed: '+error.message);
         Logger.log(100, '', error.stack);
