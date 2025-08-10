@@ -40,7 +40,7 @@ class TestFreeSpaceCalculation extends BaseFunctionalityTest
         config.mapSize = {mapWidth: 40, mapHeight: 40};
         config.freeSpaceTilesQuantity = 8;
         await this.testWithDeterministicSeed('Free space boundary enforcement', config, 11223, async (map, config) => {
-            let elementPositions = this.freeSpaceValidator.gatherElementPositions(map, config);
+            let elementPositions = this.freeSpaceValidator.elementPositionAnalyzer.gatherElementPositions(map, config);
             this.assert(0 < elementPositions.length, 'Should find element positions to validate');
             let validation = this.freeSpaceValidator.validateFreeSpaceMinimums(map, config);
             this.logFunctionalityResult('Free Space Boundary Enforcement', validation);
