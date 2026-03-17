@@ -1,3 +1,4 @@
+.mcp.json
 # Logs:
 logs
 *.log
@@ -14,7 +15,11 @@ node_modules/
 # Optional npm cache directory:
 .npm
 # Project:
-.claude
+/.claude/settings.json
+/.claude/settings.local.json
+/.claude/instructions.md
+/CLAUDE.local.md
+/.claude/skills/
 .idea
 **/generated/**/*.png
 **/generated/**/*.json
