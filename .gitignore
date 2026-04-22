@@ -24,3 +24,11 @@ node_modules/
 **/generated/**/*.png
 **/generated/**/*.json
 patches/*
+/.claude/hook-state.json
+/.playwright-mcp
+/test-results
+/tests/e2e/reports
+/.claude/claude-sessions.md
+/.claude/session-summary-state.json
+/.claude/hook-bypass.flag
+.hooks-ignore
