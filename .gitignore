@@ -32,3 +32,4 @@ patches/*
 /.claude/session-summary-state.json
 /.claude/hook-bypass.flag
 .hooks-ignore
+/.claude/hook-approvals.json

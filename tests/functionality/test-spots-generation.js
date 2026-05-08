@@ -116,6 +116,62 @@ class TestSpotsGeneration extends BaseFunctionalityTest
         });
     }
 
+    async testSpotWithIsElementProperty()
+    {
+        let config = this.setupBasicConfig();
+        config.groundSpots = {
+            'ie-spot': {
+                quantity: 1,
+                width: 3,
+                height: 3,
+                walkable: true,
+                layerName: 'ground-spot-ie-spot',
+                tilesKey: 'ie-spot',
+                spotTile: 116,
+                isElement: true,
+                freeSpaceAround: 1
+            }
+        };
+        config.groundSpotsPropertiesMappers = {
+            'ie-spot': new PropertiesMapper('ie-spot')
+        };
+        await this.testWithDeterministicSeed('Spot with isElement property', config, 77701, async (map, config) => {
+            let validation = this.spotsValidator.validateSpotQuantities(map, config);
+            this.logFunctionalityResult('Spot With isElement Property', validation);
+            this.assert(validation.isValid, 'isElement spot must be placed as a map element');
+            this.assertEqual(validation.totalFound, 1, 'Exactly one isElement spot must be found in map');
+        });
+    }
+
+    async testSpotWithDepthProperty()
+    {
+        let config = this.setupBasicConfig();
+        config.groundSpots = {
+            'depth-spot': {
+                quantity: 1,
+                width: 3,
+                height: 3,
+                walkable: true,
+                layerName: 'ground-spot-depth-spot',
+                tilesKey: 'depth-spot',
+                spotTile: 116,
+                isElement: true,
+                depth: 'ground',
+                freeSpaceAround: 1
+            }
+        };
+        config.groundSpotsPropertiesMappers = {
+            'depth-spot': new PropertiesMapper('depth-spot')
+        };
+        await this.testWithDeterministicSeed('Spot with depth property', config, 77702, async (map) => {
+            let groundLayerIndex = map.layers.findIndex(l => 'ground' === l.name);
+            let spotLayerIndex = map.layers.findIndex(l => -1 !== l.name.indexOf('depth-spot'));
+            this.assert(-1 !== groundLayerIndex, 'Ground layer must exist in map');
+            this.assert(-1 !== spotLayerIndex, 'Depth spot layer must exist in map');
+            this.assertEqual(spotLayerIndex, groundLayerIndex + 1, 'Depth spot layer must be positioned right after ground layer');
+        });
+    }
+
 }
 
 module.exports.TestSpotsGeneration = TestSpotsGeneration;

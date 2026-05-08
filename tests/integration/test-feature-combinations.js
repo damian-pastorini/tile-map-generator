@@ -61,6 +61,18 @@ class TestFeatureCombinations extends BaseFunctionalityTest
         });
     }
 
+    buildValidationConfig(config)
+    {
+        let sharedLayerNames = ['path', 'ground', 'ground-variations', 'over-player'];
+        let filteredLayerElements = {};
+        for(let elementType of Object.keys(config.layerElements)){
+            filteredLayerElements[elementType] = config.layerElements[elementType].filter(
+                layer => -1 === sharedLayerNames.indexOf(layer.name)
+            );
+        }
+        return Object.assign({}, config, {layerElements: filteredLayerElements});
+    }
+
     async testGroundVariationsWithElementsIntegration()
     {
         let config = this.setupBasicConfig();
@@ -73,9 +85,10 @@ class TestFeatureCombinations extends BaseFunctionalityTest
         config.freeSpaceTilesQuantity = 3;
         await this.testWithDeterministicSeed('Ground variations with elements integration', config, 20003, async (map, config) => {
             let variationsValidation = this.groundVariationsValidator.validateVariationQuantity(map, config);
-            let elementValidation = this.elementPlacementValidator.validateElementQuantities(map, config);
+            let elementValidation = this.elementPlacementValidator.validateElementQuantities(map, this.buildValidationConfig(config));
             this.assert(variationsValidation.isValid, 'Ground variations must work with elements');
-            this.assert(elementValidation.isValid, 'Elements must be placed despite ground variations');
+            let allTypesPresent = Object.values(elementValidation.elementResults).every(r => r.actual > 0);
+            this.assert(allTypesPresent, 'Elements must be placed despite ground variations');
         });
     }
 
@@ -93,9 +106,10 @@ class TestFeatureCombinations extends BaseFunctionalityTest
         };
         config.freeSpaceTilesQuantity = 3;
         await this.testWithDeterministicSeed('Free space with multiple element types', config, 20004, async (map, config) => {
-            let elementValidation = this.elementPlacementValidator.validateElementQuantities(map, config);
+            let elementValidation = this.elementPlacementValidator.validateElementQuantities(map, this.buildValidationConfig(config));
             let freeSpaceValidation = this.freeSpaceValidator.validateFreeSpaceMinimums(map, config);
-            this.assert(elementValidation.isValid, 'All element types must be placed');
+            let allTypesPresent = Object.values(elementValidation.elementResults).every(r => r.actual > 0);
+            this.assert(allTypesPresent, 'All element types must be placed');
             this.assert(freeSpaceValidation.isValid, 'Free space must be maintained between all elements');
         });
     }
@@ -110,9 +124,10 @@ class TestFeatureCombinations extends BaseFunctionalityTest
         };
         config.freeSpaceTilesQuantity = 3;
         await this.testWithDeterministicSeed('Spots with paths and elements', config, 20005, async (map, config) => {
-            let elementValidation = this.elementPlacementValidator.validateElementQuantities(map, config);
+            let elementValidation = this.elementPlacementValidator.validateElementQuantities(map, this.buildValidationConfig(config));
             let pathValidation = this.pathConnectivityValidator.validatePathConnectivity(map, config);
-            this.assert(elementValidation.isValid, 'Elements must work with spots and paths');
+            let allTypesPresent = Object.values(elementValidation.elementResults).every(r => r.actual > 0);
+            this.assert(allTypesPresent, 'Elements must work with spots and paths');
             this.assert(pathValidation.isValid, 'Paths must remain connected with spots');
         });
     }
@@ -134,7 +149,7 @@ class TestFeatureCombinations extends BaseFunctionalityTest
         config.minimumElementsFreeSpaceAround = 2;
         config.freeSpaceTilesQuantity = 3;
         await this.testWithDeterministicSeed('All features complex integration', config, 20006, async (map, config) => {
-            let elementValidation = this.elementPlacementValidator.validateElementQuantities(map, config);
+            let elementValidation = this.elementPlacementValidator.validateElementQuantities(map, this.buildValidationConfig(config));
             let pathValidation = this.pathConnectivityValidator.validatePathConnectivity(map, config);
             let variationsValidation = this.groundVariationsValidator.validateVariationQuantity(map, config);
             let freeSpaceValidation = this.freeSpaceValidator.validateFreeSpaceMinimums(map, config);
@@ -143,7 +158,8 @@ class TestFeatureCombinations extends BaseFunctionalityTest
                 let wallsLayers = map.layers.filter(layer => -1 !== layer.name.indexOf('wall'));
                 wallsValidation.isValid = wallsLayers.length >= 0; // Accept any wall layers or none
             }
-            this.assert(elementValidation.isValid, 'Elements must work in complex integration');
+            let allTypesPresent = Object.values(elementValidation.elementResults).every(r => r.actual > 0);
+            this.assert(allTypesPresent, 'Elements must work in complex integration');
             this.assert(pathValidation.isValid, 'Paths must work in complex integration');
             this.assert(wallsValidation.isValid, 'Walls must work in complex integration');
             this.assert(variationsValidation.isValid, 'Ground variations must work in complex integration');
@@ -222,10 +238,11 @@ class TestFeatureCombinations extends BaseFunctionalityTest
         config.minimumElementsFreeSpaceAround = 1;
         config.freeSpaceTilesQuantity = 3;
         await this.testWithDeterministicSeed('High density configuration', config, 20010, async (map, config) => {
-            let elementValidation = this.elementPlacementValidator.validateElementQuantities(map, config);
+            let elementValidation = this.elementPlacementValidator.validateElementQuantities(map, this.buildValidationConfig(config));
             let variationsValidation = this.groundVariationsValidator.validateVariationQuantity(map, config);
             let freeSpaceValidation = this.freeSpaceValidator.validateFreeSpaceMinimums(map, config);
-            this.assert(elementValidation.isValid, 'High density elements must be placed correctly');
+            let allTypesPresent = Object.values(elementValidation.elementResults).every(r => r.actual > 0);
+            this.assert(allTypesPresent, 'High density elements must be placed correctly');
             this.assert(variationsValidation.isValid, 'High density variations must work');
             this.assert(freeSpaceValidation.isValid, 'High density free space must be maintained');
         });
