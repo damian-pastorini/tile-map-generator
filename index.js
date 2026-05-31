@@ -14,6 +14,10 @@ const { MultipleWithAssociationsByLoaderGenerator } = require(
 const { PropertiesMapper } = require('./lib/generator/properties-mapper');
 const { LayerElementsCompositeLoader } = require('./lib/loader/layer-elements-composite-loader');
 const { LayerElementsObjectLoader } = require('./lib/loader/layer-elements-object-loader');
+const { ElementsFromLayersLoader } = require('./lib/loader/elements-from-layers-loader');
+const { ElementMover } = require('./lib/map/element-mover');
+const { ElementDeleter } = require('./lib/map/element-deleter');
+const { ElementNameSuffix } = require('./lib/utilities/element-name-suffix');
 const { MapDataMapper } = require('./lib/map/data-mapper');
 const { PathFinder } = require('./lib/path-finder/path-finder');
 const { MapCompositeDataSchema } = require('./lib/schemas/map-composite-data-schema');
@@ -29,6 +33,10 @@ module.exports = {
     PropertiesMapper,
     LayerElementsCompositeLoader,
     LayerElementsObjectLoader,
+    ElementsFromLayersLoader,
+    ElementMover,
+    ElementDeleter,
+    ElementNameSuffix,
     MapDataMapper,
     PathFinder,
     MapCompositeDataSchema,
