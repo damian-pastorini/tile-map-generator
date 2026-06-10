@@ -218,6 +218,20 @@ Steps:
 6. `buildVariationLayers()` — appends: `ground-variations` layer (random ground tile IDs listed sequentially), `tileset-ref` layer (annotated tile IDs), spot variation layers (`spot-layer-ground-variations-{spotKey}`)
 7. Returns full Tiled map object
 
+### Per-instance output layer naming - `ElementLayerName` (`lib/utilities/element-layer-name.js`)
+
+The composite/source convention above (`{name}-{index}-{layerType}`, split by `-`) describes the INPUT element layers. When the generator PLACES elements, each placed copy gets its own layer so overlapping copies of the same element never overwrite each other's tiles.
+
+The instance number is FUSED to the element key (no extra `-` segment, since `-` is the structural delimiter):
+
+- `ElementLayerName.build(elementType, instanceNumber, sourceLayerName)`: e.g. element `tree`, source layer `tree-collisions`, instance 0 => `tree0-collisions`. If the source layer name does not start with the element key it is appended whole (`collisions` => `tree0-collisions`), so output is always element-scoped (no cross-element collision) and convention-agnostic.
+- `ElementLayerName.instanceIndex(elementType, layerName)`: inverse parse, strips the element key and reads the leading digits before the next `-` (`name.slice(elementType.length).match(/^([0-9]+)-/)`). Returns the instance index string or `null`.
+
+Used by:
+- `RandomMapGenerator.updateLayerData()`: builds the per-instance target layer (`additionalLayers` find-or-create).
+- `PatternMatcher.countElementInstancesInMap()`: counts an element's instances by distinct instance indices.
+- `ElementPositionAnalyzer.findElementPositionsInMap()`: groups an element's layers by instance index, one position per instance.
+
 **Key method in `createTilesetEntry()` — `composite-builder.js:106`:**
 - `CompositeTileAnnotationBuilder.buildTileAnnotations()` — adds `tiles[]` with `key` and `groundSpots` properties (see annotation rules below)
 - `CompositeWangsetBuilder.buildSpotWangsets()` — adds `wangsets[]` for inner/outer walls (see wangset rules below)

@@ -17,7 +17,9 @@ const { LayerElementsObjectLoader } = require('./lib/loader/layer-elements-objec
 const { ElementsFromLayersLoader } = require('./lib/loader/elements-from-layers-loader');
 const { ElementMover } = require('./lib/map/element-mover');
 const { ElementDeleter } = require('./lib/map/element-deleter');
+const { ElementsToLayersBuilder } = require('./lib/map/elements-to-layers-builder');
 const { ElementNameSuffix } = require('./lib/utilities/element-name-suffix');
+const { LayerComponentSplitter } = require('./lib/map/layer-component-splitter');
 const { MapDataMapper } = require('./lib/map/data-mapper');
 const { PathFinder } = require('./lib/path-finder/path-finder');
 const { MapCompositeDataSchema } = require('./lib/schemas/map-composite-data-schema');
@@ -36,7 +38,9 @@ module.exports = {
     ElementsFromLayersLoader,
     ElementMover,
     ElementDeleter,
+    ElementsToLayersBuilder,
     ElementNameSuffix,
+    LayerComponentSplitter,
     MapDataMapper,
     PathFinder,
     MapCompositeDataSchema,
