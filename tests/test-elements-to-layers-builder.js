@@ -11,12 +11,11 @@ const { ElementsToLayersBuilder } = require('../lib/map/elements-to-layers-build
 class TestElementsToLayersBuilder extends BaseMapGeneratorTest
 {
 
-    buildTwoTreeMap()
+    buildSingleTreeMap(groundData)
     {
         return ElementFixtures.buildMap([
-            ElementFixtures.buildLayer('ground', [0, 0, 0, 0]),
-            ElementFixtures.buildLayer('tree-001-below-player', [0, 0, 0, 0]),
-            ElementFixtures.buildLayer('tree-002-below-player', [0, 0, 0, 0])
+            ElementFixtures.buildLayer('ground', groundData),
+            ElementFixtures.buildLayer('tree-001-below-player', [0, 0, 0, 0])
         ], 2, 2);
     }
 
@@ -30,24 +29,46 @@ class TestElementsToLayersBuilder extends BaseMapGeneratorTest
         );
     }
 
-    async testRebuildsElementLayerFromRecord()
+    buildNonCollidingTreeElements()
     {
-        await this.test('Element layer is rebuilt and merged from the record tiles', async () => {
-            let mapJson = ElementFixtures.buildMap([
-                ElementFixtures.buildLayer('ground', [1, 1, 1, 1]),
-                ElementFixtures.buildLayer('tree-001-below-player', [0, 0, 0, 0])
-            ], 2, 2);
-            let mapElements = {
-                elements: [ElementFixtures.buildElement('tree-001', 'tree', 1,
-                    {col: 1, row: 1, width: 1, height: 1},
-                    [ElementFixtures.buildElementLayer('tree-001-below-player', 'below-player', [
-                        {col: 1, row: 1, gid: 100}
-                    ])]
-                )]
-            };
+        return {
+            elements: [
+                this.buildBelowPlayerTree('tree-002', 2, 0, 0, 200),
+                this.buildBelowPlayerTree('tree-001', 1, 1, 1, 100)
+            ]
+        };
+    }
+
+    buildCollidingTreeElements()
+    {
+        return {
+            elements: [
+                this.buildBelowPlayerTree('tree-001', 1, 0, 0, 100),
+                this.buildBelowPlayerTree('tree-002', 2, 0, 0, 200)
+            ]
+        };
+    }
+
+    applyTrees(mapElements, autoMergeLayersByKeys)
+    {
+        return new ElementsToLayersBuilder({autoMergeLayersByKeys}).apply(
+            ElementFixtures.buildMap([
+                ElementFixtures.buildLayer('ground', [0, 0, 0, 0]),
+                ElementFixtures.buildLayer('tree-001-below-player', [0, 0, 0, 0]),
+                ElementFixtures.buildLayer('tree-002-below-player', [0, 0, 0, 0])
+            ], 2, 2),
+            mapElements
+        );
+    }
+
+    async testRebuildsElementLayerUnmergedByDefault()
+    {
+        await this.test('Element layer is rebuilt un-merged from the record tiles by default', async () => {
+            let mapJson = this.buildSingleTreeMap([1, 1, 1, 1]);
+            let mapElements = {elements: [this.buildBelowPlayerTree('tree-001', 1, 1, 1, 100)]};
             let result = new ElementsToLayersBuilder().apply(mapJson, mapElements);
-            let treeLayer = result.layers.find((layer) => 'merge-tree-001-below-player' === layer.name);
-            this.assert(treeLayer, 'Merged element layer should exist');
+            let treeLayer = result.layers.find((layer) => 'tree-001-below-player' === layer.name);
+            this.assert(treeLayer, 'Un-merged element layer should exist');
             this.assertEqual(treeLayer.data.length, 4, 'Layer data should cover the full map');
             this.assertEqual(treeLayer.data[3], 100, 'Tile should be placed at row 1 col 1');
             this.assertEqual(treeLayer.width, 2, 'Layer width should match map width');
@@ -58,37 +79,30 @@ class TestElementsToLayersBuilder extends BaseMapGeneratorTest
     async testStaticLayersKept()
     {
         await this.test('Static layers are kept untouched', async () => {
-            let mapJson = ElementFixtures.buildMap([
-                ElementFixtures.buildLayer('ground', [1, 2, 3, 4]),
-                ElementFixtures.buildLayer('tree-001-below-player', [0, 0, 0, 0])
-            ], 2, 2);
-            let mapElements = {
-                elements: [ElementFixtures.buildElement('tree-001', 'tree', 1,
-                    {col: 0, row: 0, width: 1, height: 1},
-                    [ElementFixtures.buildElementLayer('tree-001-below-player', 'below-player', [
-                        {col: 0, row: 0, gid: 100}
-                    ])]
-                )]
-            };
+            let mapJson = this.buildSingleTreeMap([1, 2, 3, 4]);
+            let mapElements = {elements: [this.buildBelowPlayerTree('tree-001', 1, 0, 0, 100)]};
             let result = new ElementsToLayersBuilder().apply(mapJson, mapElements);
             this.assertEqual(result.layers[0].name, 'ground', 'Ground should stay first');
             this.assertDeepEqual(result.layers[0].data, [1, 2, 3, 4], 'Ground data should be untouched');
         });
     }
 
-    async testElementLayersFollowRecordOrder()
+    async testElementLayersFollowRecordOrderUnmerged()
     {
-        await this.test('Non-colliding same-type element layers merge in record order', async () => {
-            let mapJson = this.buildTwoTreeMap();
-            let mapElements = {
-                elements: [
-                    this.buildBelowPlayerTree('tree-002', 2, 0, 0, 200),
-                    this.buildBelowPlayerTree('tree-001', 1, 1, 1, 100)
-                ]
-            };
-            let result = new ElementsToLayersBuilder().apply(mapJson, mapElements);
-            this.assertEqual(result.layers.length, 2, 'Ground plus a single merged element layer');
+        await this.test('Element layers are emitted un-merged in record order by default', async () => {
+            let result = this.applyTrees(this.buildNonCollidingTreeElements(), []);
+            this.assertEqual(result.layers.length, 3, 'Ground plus two un-merged element layers');
             this.assertEqual(result.layers[0].name, 'ground', 'Ground stays first');
+            this.assertEqual(result.layers[1].name, 'tree-002-below-player', 'First record element comes first');
+            this.assertEqual(result.layers[2].name, 'tree-001-below-player', 'Second record element comes second');
+        });
+    }
+
+    async testMergesNonCollidingWhenConfigured()
+    {
+        await this.test('Configured keys merge non-colliding same-type layers in record order', async () => {
+            let result = this.applyTrees(this.buildNonCollidingTreeElements(), ['below-player']);
+            this.assertEqual(result.layers.length, 2, 'Ground plus a single merged element layer');
             this.assertEqual(
                 result.layers[1].name,
                 'merge-tree-002-below-player-tree-001-below-player',
@@ -98,17 +112,10 @@ class TestElementsToLayersBuilder extends BaseMapGeneratorTest
         });
     }
 
-    async testCollidingSameTypeStaySeparate()
+    async testCollidingStaySeparateWhenConfigured()
     {
-        await this.test('Colliding same-type element layers stay separate in record order', async () => {
-            let mapJson = this.buildTwoTreeMap();
-            let mapElements = {
-                elements: [
-                    this.buildBelowPlayerTree('tree-001', 1, 0, 0, 100),
-                    this.buildBelowPlayerTree('tree-002', 2, 0, 0, 200)
-                ]
-            };
-            let result = new ElementsToLayersBuilder().apply(mapJson, mapElements);
+        await this.test('Configured keys keep colliding same-type layers separate', async () => {
+            let result = this.applyTrees(this.buildCollidingTreeElements(), ['below-player']);
             this.assertEqual(result.layers.length, 3, 'Ground plus two separate element layers');
             this.assertEqual(result.layers[1].name, 'merge-tree-001-below-player', 'First colliding element stays first');
             this.assertEqual(result.layers[2].name, 'merge-tree-002-below-player', 'Second colliding element stays after');
@@ -117,41 +124,10 @@ class TestElementsToLayersBuilder extends BaseMapGeneratorTest
         });
     }
 
-    async testDifferentTypesDoNotMerge()
-    {
-        await this.test('Element layers of different types are not merged together', async () => {
-            let mapJson = ElementFixtures.buildMap([
-                ElementFixtures.buildLayer('ground', [0, 0, 0, 0]),
-                ElementFixtures.buildLayer('tree-001-below-player', [0, 0, 0, 0]),
-                ElementFixtures.buildLayer('tree-001-over-player', [0, 0, 0, 0])
-            ], 2, 2);
-            let mapElements = {
-                elements: [ElementFixtures.buildElement('tree-001', 'tree', 1,
-                    {col: 0, row: 0, width: 1, height: 2},
-                    [
-                        ElementFixtures.buildElementLayer('tree-001-below-player', 'below-player', [
-                            {col: 0, row: 1, gid: 100}
-                        ]),
-                        ElementFixtures.buildElementLayer('tree-001-over-player', 'over-player', [
-                            {col: 0, row: 0, gid: 101}
-                        ])
-                    ]
-                )]
-            };
-            let result = new ElementsToLayersBuilder().apply(mapJson, mapElements);
-            this.assertEqual(result.layers.length, 3, 'Ground plus one layer per element type');
-            this.assertEqual(result.layers[1].name, 'merge-tree-001-below-player', 'Below-player group comes first');
-            this.assertEqual(result.layers[2].name, 'merge-tree-001-over-player', 'Over-player group stays separate');
-        });
-    }
-
     async testEmptyRecordDropsElementLayers()
     {
         await this.test('Empty record keeps static layers and drops element layers', async () => {
-            let mapJson = ElementFixtures.buildMap([
-                ElementFixtures.buildLayer('ground', [1, 1, 1, 1]),
-                ElementFixtures.buildLayer('tree-001-below-player', [0, 0, 100, 0])
-            ], 2, 2);
+            let mapJson = this.buildSingleTreeMap([1, 1, 1, 1]);
             let result = new ElementsToLayersBuilder().apply(mapJson, {elements: []});
             this.assertEqual(result.layers.length, 1, 'Only the static layer should remain');
             this.assertEqual(result.layers[0].name, 'ground', 'Ground should remain');
