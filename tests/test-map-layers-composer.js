@@ -67,9 +67,9 @@ class TestMapLayersComposer extends BaseMapGeneratorTest
     async testHasTileCollision()
     {
         await this.test('hasTileCollision detects overlapping non-zero tiles', async () => {
-            let composer = new MapLayersComposer(this.buildGeneratorStub());
-            this.assertEqual(composer.hasTileCollision([1, 0, 0], [0, 0, 2]), false);
-            this.assertEqual(composer.hasTileCollision([1, 0, 0], [3, 0, 0]), true);
+            let factory = new LayerDataFactory();
+            this.assertEqual(factory.hasTileCollision([1, 0, 0], [0, 0, 2]), false);
+            this.assertEqual(factory.hasTileCollision([1, 0, 0], [3, 0, 0]), true);
         });
     }
 
