@@ -6,8 +6,8 @@
 
 const { BaseMapGeneratorTest } = require('./base-map-generator-test');
 const { MapValidator } = require('../lib/validator/map-validator');
-const { GraphAlgorithms } = require('../lib/utilities/graph-algorithms');
-const { DistanceCalculator } = require('../lib/utilities/distance-calculator');
+const { GraphAlgorithms } = require('../lib/path-finder/graph-algorithms');
+const { DistanceCalculator } = require('../lib/map/distance-calculator');
 const { OptionsValidator } = require('../lib/validator/options-validator');
 const { RandomMapGenerator } = require('../lib/random-map-generator');
 const { Logger } = require('@reldens/utils');

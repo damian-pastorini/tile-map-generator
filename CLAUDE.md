@@ -9,11 +9,12 @@
 - Map layer merging and optimization
 - Support for multi-floor dungeons with stairs/change-points
 - Ground tile variations and path borders
+- Invisible spots for spawn points and special areas
 
 ## Key Commands
 
 ```bash
-# Run tests
+# Run tests (unit tests per class + integration/golden tests)
 npm test
 
 # The package is used programmatically in Node.js applications
@@ -21,14 +22,18 @@ npm test
 
 ## Architecture
 
+### Dependency Injection Convention
+
+Sub-classes do NOT receive the whole generator. Each class receives ONLY the specific collaborators it needs (constructor injection) and reads runtime/config DATA via method arguments. `RandomMapGenerator.resetInstance()` constructs every sub-instance in dependency order and wires the specific collaborators into each one. When adding or extracting a class, pass it the concrete collaborators it uses (never the whole generator) and make sure those collaborators are created before it in `resetInstance()`.
+
 ### Core Classes
 
 **RandomMapGenerator** (`lib/random-map-generator.js`):
 - Main generator class for creating procedural tile-based maps
+- Owns option parsing (`setOptions` and the `assign*`/`initializeRuntimeState` helpers), builds the Tiled map object (`createTiledMapObject`), and constructs/wires all sub-instances in `resetInstance()`
 - Handles map grid initialization, element placement, and path generation
 - Validates map connectivity using A* pathfinding
 - Generates Tiled-compatible JSON output
-- Supports map properties, custom layers, and element variations
 - Methods: `generate()`, `fromElementsProvider()`, `placeElements()`, `generateLayersList()`
 
 **MultipleByLoaderGenerator** (`lib/generator/multiple-by-loader-generator.js`):
@@ -41,6 +46,9 @@ npm test
 - Handles map-to-map connections (change-points and return-points)
 - Supports multi-floor dungeons and connected overworld maps
 
+**AssociatedMaps** (`lib/generator/associated-maps.js`):
+- Builds the associated sub-maps (floors) and their naming/titles from composite associations
+
 **ElementsProvider** (`lib/generator/elements-provider.js`):
 - Splits and processes map elements from composite Tiled maps
 - Extracts individual elements (houses, trees, etc.) into separate layer groups
@@ -51,167 +59,173 @@ npm test
 - Creates pathfinding grids from map data
 - Uses A* algorithm to find paths and validate connectivity
 
-**PathConnector** (`lib/generator/path-connector.js`):
-- Connects isolated map areas with paths
-- Generates main paths and element-to-path connections
-- Applies path tiles with surrounding borders and corners
-
 **WallsGenerator** (`lib/generator/walls-generator.js`):
-- Generates wall tiles around paths
-- Supports inner walls and outer walls
+- Generates wall tiles around paths (inner and outer walls)
 - Applies wall patterns based on surrounding tiles
 
-**SpotGenerator** (`lib/generator/spot-generator.js`):
-- Generates invisible spots (areas) on the map
-- Creates nested spots with depth control
-- Used for spawn points, safe zones, and special areas
-
 **MapGridBuilder** (`lib/generator/map-grid-builder.js`):
-- Initializes empty map grids
-- Marks walkable/non-walkable positions
-- Handles border blocking and entry positions
+- Initializes empty map grids, marks walkable/non-walkable positions, builds the pathfinding grid, and handles border blocking
 
 **PositionFinder** (`lib/generator/position-finder.js`):
-- Finds valid positions for element placement
-- Considers element size, free space requirements, and map constraints
-- Sorts positions by distance from map center or borders
+- Finds valid positions for element placement considering element size, free space and map constraints
+
+**ElementsPlacer** / **CenteredElementsPlacer** / **ElementLayerWriter** (`lib/generator/`):
+- Place elements (with free-space rules), place map-centered elements, and write per-instance element layers
+
+**MapBorderGenerator** (`lib/generator/map-border-generator.js`):
+- Builds the collision map border and entry positions
+
+**MapLayersComposer** (`lib/generator/map-layers-composer.js`):
+- Assembles, merges (by tile value and by name substring), reorders and id-assigns the final layer list
 
 **PropertiesMapper** (`lib/generator/properties-mapper.js`):
-- Maps tile properties for different tile types
-- Handles surrounding tiles (borders, corners)
-- Used for path tile variations
+- Maps tile properties (surrounding tiles, corners) for path/spot tile variations
 
-### Loaders
+**TilePositionCalculator** (`lib/generator/tile-position-calculator.js`):
+- Tile index math, border checks and return-index resolution
 
-**LayerElementsObjectLoader** (`lib/loader/layer-elements-object-loader.js`):
-- Loads map configuration from JSON files
-- Validates map data against schema
-- Loads individual element files (houses, trees, etc.)
+**ReturnPointWriter** (`lib/generator/return-point-writer.js`):
+- Records return-points and change-points into the provided state objects (no generator coupling)
 
-**LayerElementsCompositeLoader** (`lib/loader/layer-elements-composite-loader.js`):
-- Loads composite map configurations
-- Handles multiple map generation from single config
-- Validates against composite schema
+**DebugHelper** (`lib/generator/debug-helper.js`) / **FileOperations** (`lib/generator/file-operations.js`):
+- Optional debug map file writing and generated-file cleanup
 
-### Validators
+### Path Subsystem
 
-**OptionsValidator** (`lib/validator/options-validator.js`):
-- Validates required map generation options
-- Checks tileSize, tileSheet, dimensions, elements, etc.
+`PathConnector` coordinates path generation and delegates to focused, injected sub-classes:
 
-**MapValidator** (`lib/validator/map-validator.js`):
-- Validates generated map structure
-- Ensures map meets requirements
+**PathConnector** (`lib/generator/path-connector.js`):
+- Orchestrates path connectivity: builds the pathfinding grid, routes element paths, applies surrounding/border tiles and walls
 
-**PathConnectivityValidator** (`lib/validator/path-connectivity-validator.js`):
-- Validates that all map areas are reachable via paths
-- Uses pathfinding to ensure connectivity
+**MainPathGenerator** (`lib/generator/main-path-generator.js`):
+- Generates the main path indexes (random/opposite), places them, and records the default return-point
 
-**BoundaryValidator** (`lib/validator/boundary-validator.js`):
-- Validates element placement within map boundaries
-- Prevents out-of-bounds placement
+**PathRouter** (`lib/generator/path-router.js`):
+- Finds path-tile positions, sorts them by distance, and routes A* paths between points
 
-**ElementPlacementValidator** (`lib/validator/element-placement-validator.js`):
-- Validates element placement against constraints
-- Checks free space requirements and overlaps
+**PathExpander** (`lib/generator/path-expander.js`):
+- Expands single-tile paths to the configured `pathSize` (working data held as fields)
 
-**FreeSpaceValidator** (`lib/validator/free-space-validator.js`):
-- Validates free space around elements
-- Ensures minimum spacing between elements
+**PathTilesFinisher** (`lib/generator/path-tiles-finisher.js`):
+- Fills single-tile gaps, cleans path border tiles, fetches border-end tiles, and builds path inner/outer walls
 
-**WallsValidator** (`lib/validator/walls-validator.js`):
-- Validates wall tile placement
-- Ensures proper wall patterns
+### Spot Subsystem
 
-**GroundVariationsValidator** (`lib/validator/ground-variations-validator.js`):
-- Validates ground tile variations
-- Ensures variation percentages are applied correctly
+`SpotGenerator` coordinates invisible-spot generation and delegates to focused, injected sub-classes:
 
-**SpotsValidator** (`lib/validator/spots-validator.js`):
-- Validates spot generation
-- Checks spot boundaries and nesting
+**SpotGenerator** (`lib/generator/spot-generator.js`):
+- Generates invisible spots (areas), nested spots with depth control; used for spawn points, safe zones and special areas
 
-### Map Components
+**SpotLayersBuilder** (`lib/generator/spot-layers-builder.js`):
+- Builds spot layer data, random path layers, variation layers and the invisible-spots layers
 
-**JsonFormatter** (`lib/map/json-formatter.js`):
-- Formats map data into Tiled JSON format
-- Handles proper JSON structure for Tiled compatibility
+**SpotBorderAnalyzer** (`lib/generator/spot-border-analyzer.js`):
+- Finds border tiles, continuous sequences and adjacent border tiles for spots
 
-**DataMapper** (`lib/map/data-mapper.js`):
-- Maps data between different formats
-- Converts ElementsProvider data to map configuration
+**SpotFillProcessor** (`lib/generator/spot-fill-processor.js`):
+- Fills spot tiles, internal holes and perimeter balancing
 
-**TilesShortcuts** (`lib/map/tiles-shortcuts.js`):
-- Provides shortcuts for common tile operations
-- Maps tile IDs to semantic names (path, ground, wall, etc.)
+**SpotBordersAndCorners** (`lib/generator/spot-borders-and-corners.js`):
+- Applies split borders/corners and border-end tiles for spots and paths
 
-**WallsMapper** (`lib/map/walls-mapper.js`):
-- Maps wall tiles to positions
-- Handles wall tile variations
+**SpotPlacement** (`lib/generator/spot-placement.js`):
+- Finds free spot placement and rectangle-overlap checks
 
-**WangsetMapper** (`lib/map/wangset-mapper.js`):
-- Maps Tiled Wangset tiles
-- Handles terrain transitions
+### Loaders (`lib/loader/`)
 
-### Patterns
+**LayerElementsLoader**: Base loader (shared load/validate payload flow).
 
-**BordersAndCornersTiles** (`lib/patterns/borders-and-corners-tiles.js`):
-- Defines tile patterns for borders and corners
-- Provides sequences for pattern matching and replacement
+**LayerElementsObjectLoader**: Loads object-based map configuration from JSON files; loads individual element files; validates against the object schema.
 
-**Corners** (`lib/patterns/corners.js`):
-- Corner tile patterns
-- Handles corner transitions
+**LayerElementsCompositeLoader**: Loads composite map configuration; supports multiple-map generation; validates against the composite schema.
 
-**InnerWalls** (`lib/patterns/inner-walls.js`):
-- Inner wall patterns for paths
-- Creates walls on the inside of path borders
+**ElementsFromLayersLoader**: Loads element groups from already-laid-out map layers.
 
-**OuterWalls** (`lib/patterns/outer-walls.js`):
-- Outer wall patterns for paths
-- Creates walls on the outside of path borders
+### Validators (`lib/validator/`)
 
-**OuterWallsMerge** (`lib/patterns/outer-walls-merge.js`):
-- Merges outer wall patterns
-- Handles wall overlap resolution
+**OptionsValidator**: Validates required generation options (tileSize, tileSheet, dimensions, elements, etc.); exposes `lastError`.
 
-### Utilities
+**MapValidator**: Base map-structure validation; classifies non-zero tiles.
 
-**DistanceCalculator** (`lib/utilities/distance-calculator.js`):
-- Calculates distances between positions
-- Supports Manhattan and Euclidean distance
+**MapTypeValidator**: Determines map type (dungeon/enclosed/normal/basic) and validates type-specific patterns.
 
-**GeometryCalculator** (`lib/utilities/geometry-calculator.js`):
-- Geometric calculations for map generation
-- Area, perimeter, and shape calculations
+**PathConnectivityValidator**: Validates all areas are reachable via paths (uses pathfinding); analyzes gaps and width consistency.
 
-**GraphAlgorithms** (`lib/utilities/graph-algorithms.js`):
-- Graph-based algorithms for map analysis
-- Connected components, shortest paths
+**BoundaryValidator**: Validates map/layer structure and element placement within boundaries.
 
-**ElementPositionAnalyzer** (`lib/utilities/element-position-analyzer.js`):
-- Analyzes element positions on the map
-- Determines optimal placement
+**ElementPlacementValidator**: Validates element quantities and overlaps.
 
-**PatternMatcher** (`lib/utilities/pattern-matcher.js`):
-- Matches tile patterns in layers
-- Used for tile replacement and optimization
+**FreeSpaceValidator**: Validates free space around elements and paths-in-free-space.
 
-**LayerUtility** (`lib/utilities/layer-utility.js`):
-- Layer manipulation utilities
-- Merge, split, and transform layers
+**WallsValidator**: Validates inner/outer wall placement, wall tile types and corner placement.
 
-**TileCountingUtility** (`lib/utilities/tile-counting-utility.js`):
-- Counts tiles by type
-- Statistical analysis of generated maps
+**GroundVariationsValidator**: Validates ground variation tile types and placement percentages.
 
-### Schemas
+**SpotsValidator**: Validates spot dimensions, quantities and connectivity.
 
-**MapDataSchema** (`lib/schemas/map-data-schema.js`):
-- JSON schema for object-based map data validation
+**GeneratorClassesValidator**: Validates JSON/composite structure and association structure.
 
-**MapCompositeDataSchema** (`lib/schemas/map-composite-data-schema.js`):
-- JSON schema for composite map data validation
+### Map Components (`lib/map/`)
+
+**JsonFormatter**: Formats map data into Tiled JSON structure.
+
+**MapDataMapper** (`data-mapper.js`): Converts ElementsProvider data into map configuration.
+
+**LayerDataFactory**: Layer-data primitives - `tileIndex`, `forEachMapCell`, empty-layer creation, tile-array merging, padding.
+
+**GeometryCalculator**: Geometry/adjacency - distances, neighbor positions, bounds checks, connected-tile counting, footprint walkability, placement offsets.
+
+**DistanceCalculator**: Manhattan/Euclidean distance helpers.
+
+**ElementPositionAnalyzer**: Analyzes element tile positions and pairs on the map.
+
+**PatternMatcher**: Counts element instances / matches tile patterns in layers.
+
+**LayerUtility**: Layer find/merge/transform helpers.
+
+**TileCountingUtility**: Counts tiles by type (statistics).
+
+**LayerComponentSplitter**: Splits a layer into connected components.
+
+**TileVariationsApplier**: Applies random ground tile variations by percentage.
+
+**TilesShortcuts** / **TileShortcutsMapper**: Map tile IDs to semantic shortcut names (path, ground, wall, borders, corners).
+
+**WangsetMapper** / **WallsMapper**: Map Tiled Wangset/terrain transitions and wall tiles to positions.
+
+**MapNaming**: Builds map/group names and suffixes.
+
+**ElementMover** / **ElementDeleter** / **ElementsToLayersBuilder** / **ElementLayerName** / **ElementNameSuffix**: Post-generation element operations (move/delete/rebuild layers, per-instance layer naming and unique suffixes).
+
+### Path-Finder (`lib/path-finder/`)
+
+**PathFinder**: A* wrapper (see Core Classes).
+
+**GraphAlgorithms**: Connectivity graph building, adjacency, isolated-node detection and path continuity validation.
+
+### Patterns (`lib/patterns/`)
+
+**BordersPatterns**: Sequence replacement and 90-degree rotation/rollback pipeline; owns `applyBordersAndCornersTiles` and `applyRotationToCompletePathGrid`.
+
+**BordersAndCornersTiles**: Tile pattern sequences for borders and corners.
+
+**Corners** / **InnerWalls** / **OuterWalls** / **OuterWallsMerge**: Corner and inner/outer wall patterns and overlap resolution.
+
+### Schemas (`lib/schemas/`)
+
+**MapDataSchema**: JSON schema for object-based map data validation.
+
+**MapCompositeDataSchema**: JSON schema for composite map data validation.
+
+### Constants (`lib/constants.js`)
+
+**GeneratedFoldersConstants**: Shared folder constants (e.g. `OPTIMIZED_SUB_FOLDER`). Exported from the package entry point (`index.js`).
+
+## Testing
+
+- `tests/run.js` auto-discovers every `tests/test-*.js` (and `tests/functionality/`, `tests/integration/`) whose first export is the test class - no manual registration.
+- Every class has a focused **unit test** (`tests/test-<class>.js`) extending `BaseMapGeneratorTest`, plus **integration/golden** tests that run full generation and compare output.
+- Use `ElementFixtures` for map/element fixtures and `this.seedRandom(seed)` for deterministic randomness.
 
 ## Important Notes
 
@@ -223,5 +237,7 @@ npm test
 - Output maps can be used directly in Reldens/Phaser
 - Always uses `Logger` from `@reldens/utils` instead of console.log
 - Always uses `FileHandler` from `@reldens/server-utils` for file operations
+- Always prefers `sc` (Shortcuts) helpers from `@reldens/utils` (e.g. `sc.inArray`, `sc.randomValueFromArray`, `sc.shuffleArray`)
+- Sub-classes receive specific collaborators (not the whole generator); they are constructed in dependency order in `RandomMapGenerator.resetInstance()`
 - Map layer optimization includes merging layers and removing empty layers
 - Supports map associations (stairs, change-points, return-points) for multi-floor dungeons

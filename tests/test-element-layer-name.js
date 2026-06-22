@@ -5,7 +5,7 @@
  */
 
 const { BaseMapGeneratorTest } = require('./base-map-generator-test');
-const { ElementLayerName } = require('../lib/utilities/element-layer-name');
+const { ElementLayerName } = require('../lib/map/element-layer-name');
 
 class TestElementLayerName extends BaseMapGeneratorTest
 {

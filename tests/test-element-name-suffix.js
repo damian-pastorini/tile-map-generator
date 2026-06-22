@@ -5,7 +5,7 @@
  */
 
 const { BaseMapGeneratorTest } = require('./base-map-generator-test');
-const { ElementNameSuffix } = require('../lib/utilities/element-name-suffix');
+const { ElementNameSuffix } = require('../lib/map/element-name-suffix');
 
 class TestElementNameSuffix extends BaseMapGeneratorTest
 {

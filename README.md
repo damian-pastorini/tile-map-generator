@@ -44,6 +44,7 @@ npm install @reldens/tile-map-generator
 ```javascript
 const { LayerElementsObjectLoader } = require('@reldens/tile-map-generator');
 const { RandomMapGenerator } = require('@reldens/tile-map-generator');
+const { Logger } = require('@reldens/utils');
 
 async function generateMap() {
     let loader = new LayerElementsObjectLoader({
@@ -56,7 +57,7 @@ async function generateMap() {
     let generator = new RandomMapGenerator(loader.mapData);
     let generatedMap = await generator.generate();
 
-    console.log('Map generated:', generator.mapFileFullPath);
+    Logger.info('Map generated:', generator.mapFileFullPath);
 }
 
 generateMap();
@@ -66,6 +67,7 @@ generateMap();
 
 ```javascript
 const { MultipleByLoaderGenerator } = require('@reldens/tile-map-generator');
+const { Logger } = require('@reldens/utils');
 
 async function generateMultipleMaps() {
     let generator = new MultipleByLoaderGenerator({
@@ -77,7 +79,7 @@ async function generateMultipleMaps() {
 
     await generator.generate();
 
-    console.log('Multiple maps generated');
+    Logger.info('Multiple maps generated');
 }
 
 generateMultipleMaps();
@@ -87,6 +89,7 @@ generateMultipleMaps();
 
 ```javascript
 const { MultipleWithAssociationsByLoaderGenerator } = require('@reldens/tile-map-generator');
+const { Logger } = require('@reldens/utils');
 
 async function generateAssociatedMaps() {
     let generator = new MultipleWithAssociationsByLoaderGenerator({
@@ -98,7 +101,7 @@ async function generateAssociatedMaps() {
 
     await generator.generate();
 
-    console.log('Associated maps generated with stairs and connections');
+    Logger.info('Associated maps generated with stairs and connections');
 }
 
 generateAssociatedMaps();
@@ -187,15 +190,17 @@ generateAssociatedMaps();
 
 **PathFinder**: A* pathfinding wrapper for connectivity validation
 
-**PathConnector**: Generates paths connecting map elements
+**PathConnector**: Coordinates path generation between map elements, delegating to a modular path subsystem (`MainPathGenerator`, `PathRouter`, `PathTilesFinisher`, `PathExpander`)
 
-**Validators**: Ensure map validity (boundaries, connectivity, spacing)
+**SpotGenerator**: Coordinates invisible-spot generation through a modular spot subsystem (`SpotLayersBuilder`, `SpotBorderAnalyzer`, `SpotFillProcessor`, `SpotBordersAndCorners`, `SpotPlacement`)
 
-**Loaders**: Load and validate map configurations
+**Validators** (`lib/validator/`): Ensure map validity (boundaries, connectivity, spacing, walls, spots, ground variations)
 
-**Patterns**: Tile pattern matching for borders and corners
+**Loaders** (`lib/loader/`): Load and validate map configurations
 
-**Utilities**: Helper functions for geometry, distance, and analysis
+**Patterns** (`lib/patterns/`): Tile pattern matching for borders and corners
+
+**Helpers** (`lib/map/`, `lib/path-finder/`): Geometry, distance, layer, tile-counting, pattern-matching and graph utilities used across the generator
 
 ### Map Generation Flow
 

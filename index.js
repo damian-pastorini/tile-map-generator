@@ -18,13 +18,14 @@ const { ElementsFromLayersLoader } = require('./lib/loader/elements-from-layers-
 const { ElementMover } = require('./lib/map/element-mover');
 const { ElementDeleter } = require('./lib/map/element-deleter');
 const { ElementsToLayersBuilder } = require('./lib/map/elements-to-layers-builder');
-const { ElementNameSuffix } = require('./lib/utilities/element-name-suffix');
+const { ElementNameSuffix } = require('./lib/map/element-name-suffix');
 const { LayerComponentSplitter } = require('./lib/map/layer-component-splitter');
 const { MapDataMapper } = require('./lib/map/data-mapper');
 const { PathFinder } = require('./lib/path-finder/path-finder');
 const { MapCompositeDataSchema } = require('./lib/schemas/map-composite-data-schema');
 const { MapDataSchema } = require('./lib/schemas/map-data-schema');
 const { OptionsValidator } = require('./lib/validator/options-validator');
+const { GeneratedFoldersConstants } = require('./lib/constants');
 
 module.exports = {
     RandomMapGenerator,
@@ -45,5 +46,6 @@ module.exports = {
     PathFinder,
     MapCompositeDataSchema,
     MapDataSchema,
-    OptionsValidator
+    OptionsValidator,
+    GeneratedFoldersConstants
 };
