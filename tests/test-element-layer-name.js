@@ -101,6 +101,60 @@ class TestElementLayerName extends BaseMapGeneratorTest
         });
     }
 
+    async testParseStandaloneIndexCleanName()
+    {
+        await this.test('parse extracts base, index and layerType from a clean standalone-index name', async () => {
+            let parsed = this.elementLayerName.parse('tree-0021-collisions');
+            this.assertEqual(parsed.base, 'tree', 'Base is the element key');
+            this.assertEqual(parsed.index, 21, 'Index is the numeric segment');
+            this.assertEqual(parsed.layerType, 'collisions', 'Layer type is the suffix');
+            this.assertEqual(parsed.instanceId, 'tree-0021', 'Instance id is base plus index');
+        });
+    }
+
+    async testParseNormalizesCorruptDashes()
+    {
+        await this.test('parse normalizes corrupted multi-dash names instead of propagating the dashes', async () => {
+            let parsed = this.elementLayerName.parse('tree1-----0021-collisions');
+            this.assertEqual(parsed.base, 'tree1', 'Base drops the empty dash segments');
+            this.assertEqual(parsed.index, 21, 'Index is still recovered');
+            this.assertEqual(parsed.layerType, 'collisions', 'Layer type is still recovered');
+            this.assertEqual(parsed.instanceId, 'tree1-0021', 'Instance id is normalized with a single dash');
+        });
+    }
+
+    async testParseKeepsMultiDashElementKey()
+    {
+        await this.test('parse preserves legitimate dashes inside the element key', async () => {
+            let parsed = this.elementLayerName.parse('tree-stump-001-collisions');
+            this.assertEqual(parsed.base, 'tree-stump', 'Element key dashes are preserved');
+            this.assertEqual(parsed.index, 1, 'Index is recovered');
+            this.assertEqual(parsed.layerType, 'collisions', 'Layer type is recovered');
+            this.assertEqual(parsed.instanceId, 'tree-stump-001', 'Instance id keeps the key dashes');
+        });
+    }
+
+    async testParseResolvesCollisionsOverPlayerType()
+    {
+        await this.test('parse resolves collisions-over-player as its own type, not over-player', async () => {
+            let parsed = this.elementLayerName.parse('tree-001-collisions-over-player');
+            this.assertEqual(parsed.layerType, 'collisions-over-player', 'Full compound type is resolved');
+            this.assertEqual(parsed.base, 'tree', 'Base is the element key');
+            this.assertEqual(parsed.index, 1, 'Index is recovered');
+        });
+    }
+
+    async testParseHandlesElementKeyEndingInDigits()
+    {
+        await this.test('parse keeps an element key ending in digits out of the instance index', async () => {
+            let parsed = this.elementLayerName.parse('house-02-0080-collisions');
+            this.assertEqual(parsed.base, 'house-02', 'Digit-ending element key is preserved');
+            this.assertEqual(parsed.index, 80, 'The instance index is the trailing numeric segment');
+            this.assertEqual(parsed.layerType, 'collisions', 'Layer type is recovered');
+            this.assertEqual(parsed.instanceId, 'house-02-0080', 'Instance id keeps the full key');
+        });
+    }
+
 }
 
 module.exports.TestElementLayerName = TestElementLayerName;
