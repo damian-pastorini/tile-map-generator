@@ -195,7 +195,7 @@ Sub-classes do NOT receive the whole generator. Each class receives ONLY the spe
 
 **MapNaming**: Builds map/group names and suffixes.
 
-**ElementMover** / **ElementDeleter** / **ElementsToLayersBuilder** / **ElementLayerName** / **ElementNameSuffix**: Post-generation element operations (move/delete/rebuild layers, per-instance layer naming and unique suffixes).
+**ElementMover** / **ElementDeleter** / **ElementsToLayersBuilder** / **ElementLayerName** / **ElementNameSuffix**: Post-generation element operations (move/delete; rebuild element layers from an element record, optionally merging them via a single order-preserving pass that collapses non-overlapping same-type layers and spills to `merge-{type}-N` only on a real tile overlap, never reordering by type; per-instance layer naming and unique suffixes).
 
 ### Path-Finder (`lib/path-finder/`)
 
