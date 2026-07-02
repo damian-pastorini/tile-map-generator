@@ -33,6 +33,38 @@ class TestMapDataMapper extends BaseMapGeneratorTest
         return provider;
     }
 
+    async testResolveRelativeGeneratedFolderDefaultsWhenNoRootFolder()
+    {
+        let provider = this.buildElementsProvider();
+        await this.test('resolveRelativeGeneratedFolder defaults to generated/optimized without a root folder', async () => {
+            let folder = MapDataMapper.resolveRelativeGeneratedFolder({}, provider);
+            this.assert(0 <= folder.indexOf('generated'), 'Default folder should include generated');
+            this.assert(0 <= folder.indexOf('optimized'), 'Default folder should include optimized');
+        });
+    }
+
+    async testResolveRelativeGeneratedFolderUsesRelativePathWithRootFolder()
+    {
+        let provider = {optimizedFolder: 'project/maps/generated/optimized'};
+        let props = {rootFolder: 'project/maps'};
+        await this.test('resolveRelativeGeneratedFolder builds a relative path from the root folder', async () => {
+            let folder = MapDataMapper.resolveRelativeGeneratedFolder(props, provider);
+            this.assert(0 <= folder.indexOf('generated'), 'Relative folder should include generated');
+            this.assert(0 <= folder.indexOf('optimized'), 'Relative folder should include optimized');
+            this.assert(-1 === folder.indexOf('project'), 'Relative folder should be relative to the root folder');
+        });
+    }
+
+    async testBuildTileSheetPathAppendsTilesetImage()
+    {
+        let provider = this.buildElementsProvider();
+        await this.test('buildTileSheetPath appends the optimized tileset image to the generated folder', async () => {
+            let path = MapDataMapper.buildTileSheetPath({}, provider);
+            this.assert(0 <= path.indexOf('sheet.png'), 'Path should include the tileset image');
+            this.assert(0 <= path.indexOf('optimized'), 'Path should include the optimized folder');
+        });
+    }
+
     async testFromOptimizedMapReadsTilesetFields()
     {
         let provider = this.buildElementsProvider();

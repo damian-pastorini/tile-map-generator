@@ -24,10 +24,7 @@ class TestElementsPlacer extends BaseMapGeneratorTest
             layerElements: {}
         };
         generator.mapLayersComposer = new MapLayersComposer(generator);
-        if(overrides){
-            Object.assign(generator, overrides);
-        }
-        return generator;
+        return overrides ? Object.assign(generator, overrides) : generator;
     }
 
     async testConstruction()
@@ -120,6 +117,126 @@ class TestElementsPlacer extends BaseMapGeneratorTest
             let placer = new ElementsPlacer(generator);
             placer.prePlaceStairs();
             this.assertEqual(generator.elementsQuantity['stairs-up'], 1);
+        });
+    }
+
+    async testGenerateAdditionalLayers()
+    {
+        await this.test('generateAdditionalLayers adds one layer per unique visible name', async () => {
+            let generator = this.buildGeneratorStub({
+                mapWidth: 2,
+                mapHeight: 2,
+                additionalLayers: [],
+                layerElements: {
+                    tree: [
+                        {type: 'tilelayer', name: 'tree-below', visible: true},
+                        {type: 'tilelayer', name: 'tree-below', visible: true},
+                        {type: 'tilelayer', name: 'tree-hidden', visible: false}
+                    ]
+                },
+                generateLayerWithData: (name, data) => {
+                    return {name, data, type: 'tilelayer'};
+                }
+            });
+            let placer = new ElementsPlacer(generator);
+            placer.generateAdditionalLayers();
+            this.assertEqual(generator.additionalLayers.length, 1);
+            this.assertEqual(generator.additionalLayers[0].name, 'tree-below');
+            this.assertEqual(generator.additionalLayers[0].data.length, 4);
+        });
+    }
+
+    recordingWriter(writerCalls)
+    {
+        return {
+            updateLayerData: (layer) => {
+                writerCalls.push({name: layer.name, position: layer.position});
+            }
+        };
+    }
+
+    buildWriterGenerator(layerElements, writerCalls)
+    {
+        return this.buildGeneratorStub({
+            mapWidth: 4,
+            mapHeight: 4,
+            mapName: 'town-01',
+            generatedFloorData: {},
+            additionalLayers: [],
+            layerElements: layerElements,
+            elementLayerWriter: this.recordingWriter(writerCalls)
+        });
+    }
+
+    async testPlaceElementOnMapWithPosition()
+    {
+        await this.test('placeElementOnMap writes element layer at provided position', async () => {
+            let writerCalls = [];
+            let layerElements = {
+                tree: [{type: 'tilelayer', name: 'tree-below', visible: true, width: 1, height: 1, data: [1]}]
+            };
+            let placer = new ElementsPlacer(this.buildWriterGenerator(layerElements, writerCalls));
+            placer.placeElementOnMap('tree', 0, {x: 1, y: 1});
+            this.assertEqual(writerCalls.length, 1);
+            this.assertEqual(writerCalls[0].position.x, 1);
+            this.assertEqual(writerCalls[0].position.y, 1);
+            this.assertEqual(writerCalls[0].name, 'tree-below');
+        });
+    }
+
+    async testPlaceElementOnMapStairsRecordsFloorData()
+    {
+        await this.test('placeElementOnMap records floor data for stairs elements', async () => {
+            let writerCalls = [];
+            let layerElements = {
+                'stairs-up': [{type: 'tilelayer', name: 'stairs-up-base', visible: true, width: 1, height: 1, data: [2]}]
+            };
+            let generator = this.buildWriterGenerator(layerElements, writerCalls);
+            let placer = new ElementsPlacer(generator);
+            placer.placeElementOnMap('stairs-up', 0, {x: 2, y: 3});
+            this.assertEqual(generator.generatedFloorData['stairs-up'].x, 2);
+            this.assertEqual(generator.generatedFloorData['stairs-up'].y, 3);
+        });
+    }
+
+    async testPrePlaceStairsActivePlacesFromPreviousFloor()
+    {
+        await this.test('prePlaceStairs places stairs-up from previous down floor', async () => {
+            let placeCalls = [];
+            let generator = this.buildGeneratorStub({
+                elementsQuantity: {'stairs-up': 1, 'stairs-down': 0},
+                previousFloorData: {floorKey: 'down', 'stairs-down': {x: 1, y: 1}, 'stairs-up': false}
+            });
+            let placer = new ElementsPlacer(generator);
+            placer.placeElementOnMap = (elementType, number, position) => {
+                placeCalls.push({elementType, number, position});
+            };
+            placer.prePlaceStairs();
+            this.assertEqual(placeCalls.length, 1);
+            this.assertEqual(placeCalls[0].elementType, 'stairs-up');
+            this.assertEqual(placeCalls[0].position.x, 1);
+            this.assert(!('stairs-up' in generator.elementsQuantity), 'stairs-up quantity must be deleted');
+        });
+    }
+
+    async testPlaceElementsThroughGeneration()
+    {
+        await this.test('placeElements produces element layers during real generation', async () => {
+            let config = this.setupBasicConfig();
+            Math.random = this.seedRandom(4242);
+            try {
+                let map = await this.testCurrentGeneration(config);
+                this.assert(map, 'Expected a generated map');
+                let elementLayers = map.layers.filter(layer =>
+                    'ground' !== layer.name
+                    && 'path' !== layer.name
+                    && 'collisions-map-border' !== layer.name
+                    && 'ground-variations' !== layer.name
+                );
+                this.assert(0 < elementLayers.length, 'Expected at least one element layer');
+            } finally {
+                this.restoreMathRandom();
+            }
         });
     }
 

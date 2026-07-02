@@ -66,6 +66,42 @@ class TestLayerElementsObjectLoader extends BaseMapGeneratorTest
         });
     }
 
+    async testFetchLayersJsonFromValidFile()
+    {
+        await this.test('fetchLayersJsonFromMapFile returns the layers array of a valid map file', async () => {
+            let loader = new LayerElementsObjectLoader({rootFolder: this.testDataFolder});
+            let layers = loader.fetchLayersJsonFromMapFile('tree.json');
+            this.assert(Array.isArray(layers), 'Expected layers array');
+            this.assert(0 < layers.length, 'Expected at least one layer');
+            this.assertEqual(layers[0].name, 'tree-base', 'Expected first tree layer name');
+        });
+    }
+
+    async testLoadLayerElementsFromFiles()
+    {
+        await this.test('loadLayerElements loads layers grouped by element key from files', async () => {
+            let loader = new LayerElementsObjectLoader({rootFolder: this.testDataFolder});
+            loader.mapData = {layerElementsFiles: {tree: 'tree.json', house1: 'house-001.json'}};
+            let result = loader.loadLayerElements();
+            this.assert(result, 'Expected layer elements object');
+            this.assert(Array.isArray(result.tree), 'Expected tree layers array');
+            this.assert(0 < result.tree.length, 'Expected tree layers populated');
+            this.assertEqual(result.tree[0].name, 'tree-base', 'Expected tree first layer name');
+            this.assert(Array.isArray(result.house1), 'Expected house1 layers array');
+        });
+    }
+
+    async testLoadLayerElementsSkipsInvalidFiles()
+    {
+        await this.test('loadLayerElements skips files whose layers cannot be read', async () => {
+            let loader = new LayerElementsObjectLoader({rootFolder: this.testDataFolder});
+            loader.mapData = {layerElementsFiles: {tree: 'tree.json', missing: 'non-existent-element.json'}};
+            let result = loader.loadLayerElements();
+            this.assert(result.tree, 'Expected valid tree entry present');
+            this.assert(!result.missing, 'Expected missing file to be skipped');
+        });
+    }
+
 }
 
 module.exports.TestLayerElementsObjectLoader = TestLayerElementsObjectLoader;

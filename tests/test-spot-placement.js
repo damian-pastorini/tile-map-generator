@@ -54,6 +54,22 @@ class TestSpotPlacement extends BaseMapGeneratorTest
         });
     }
 
+    async testFindFreeSpotPlacementFallbackWhenFullyOccupied()
+    {
+        Math.random = this.seedRandom(555);
+        try {
+            await this.test('findFreeSpotPlacement returns a bounded fallback when every attempt overlaps', async () => {
+                let placement = new SpotPlacement(new GeometryCalculator());
+                let occupied = [{x: 0, y: 0, width: 100, height: 100}];
+                let result = placement.findFreeSpotPlacement(occupied, 2, 2, 8, 6);
+                this.assert(result.x >= 0 && result.x < 8, 'Fallback x within max bound');
+                this.assert(result.y >= 0 && result.y < 6, 'Fallback y within max bound');
+            });
+        } finally {
+            this.restoreMathRandom();
+        }
+    }
+
 }
 
 module.exports.TestSpotPlacement = TestSpotPlacement;

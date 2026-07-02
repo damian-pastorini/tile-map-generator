@@ -105,6 +105,75 @@ class TestElementsFromLayersLoader extends BaseMapGeneratorTest
             this.assertEqual(result.elements.length, 0);
         });
     }
+
+    async testNoElementsDetectedWarning()
+    {
+        await this.test('load warns when layers exist but no elements detected', async () => {
+            let result = new ElementsFromLayersLoader().load(ElementFixtures.buildMap([
+                ElementFixtures.buildLayer('ground', [1, 1, 1, 1])
+            ]));
+            this.assertEqual(result.elements.length, 0, 'Expected no elements');
+            this.assert(-1 !== result.warnings.indexOf('no-elements-detected'), 'Expected no-elements-detected warning');
+        });
+    }
+
+    async testShouldSkipLayerBranches()
+    {
+        await this.test('shouldSkipLayer guards on type, empty, reserved names and prefixes', async () => {
+            let loader = new ElementsFromLayersLoader();
+            this.assertEqual(loader.shouldSkipLayer(null), true, 'Non-string name skipped');
+            this.assertEqual(loader.shouldSkipLayer(''), true, 'Empty name skipped');
+            this.assertEqual(loader.shouldSkipLayer('ground'), true, 'Reserved name skipped');
+            this.assertEqual(loader.shouldSkipLayer('change-points'), true, 'Reserved change-points skipped');
+            this.assertEqual(loader.shouldSkipLayer('spot-layer-mySpot'), true, 'Prefixed spot-layer skipped');
+            this.assertEqual(loader.shouldSkipLayer('tree-001-below-player'), false, 'Element layer not skipped');
+        });
+    }
+
+    async testBuildElementLayerComputesTilePositions()
+    {
+        await this.test('buildElementLayer maps non-zero gids to col/row/gid positions', async () => {
+            let loader = new ElementsFromLayersLoader();
+            let layer = {name: 'tree-001-below-player', data: [0, 100, 0, 0, 101, 0]};
+            let built = loader.buildElementLayer(layer, 'below-player', 3);
+            this.assertEqual(built.name, 'tree-001-below-player', 'Layer name preserved');
+            this.assertEqual(built.type, 'below-player', 'Layer type preserved');
+            this.assertEqual(built.tiles.length, 2, 'Two non-zero tiles collected');
+            this.assertEqual(built.tiles[0].col, 1, 'First tile col');
+            this.assertEqual(built.tiles[0].row, 0, 'First tile row');
+            this.assertEqual(built.tiles[0].gid, 100, 'First tile gid');
+            this.assertEqual(built.tiles[1].col, 1, 'Second tile col');
+            this.assertEqual(built.tiles[1].row, 1, 'Second tile row');
+            this.assertEqual(built.tiles[1].gid, 101, 'Second tile gid');
+        });
+    }
+
+    async testComputeBoundsEmptyReturnsZero()
+    {
+        await this.test('computeBounds returns zero bounds when no tiles present', async () => {
+            let loader = new ElementsFromLayersLoader();
+            let bounds = loader.computeBounds([{tiles: []}]);
+            this.assertEqual(bounds.col, 0, 'Zero col');
+            this.assertEqual(bounds.row, 0, 'Zero row');
+            this.assertEqual(bounds.width, 0, 'Zero width');
+            this.assertEqual(bounds.height, 0, 'Zero height');
+        });
+    }
+
+    async testComputeBoundsAcrossMultipleLayers()
+    {
+        await this.test('computeBounds spans tiles across layers via extendBoundsFromLayer', async () => {
+            let loader = new ElementsFromLayersLoader();
+            let bounds = loader.computeBounds([
+                {tiles: [{col: 2, row: 3}, {col: 5, row: 3}]},
+                {tiles: [{col: 1, row: 6}]}
+            ]);
+            this.assertEqual(bounds.col, 1, 'Min col across layers');
+            this.assertEqual(bounds.row, 3, 'Min row across layers');
+            this.assertEqual(bounds.width, 5, 'Width spans cols 1..5');
+            this.assertEqual(bounds.height, 4, 'Height spans rows 3..6');
+        });
+    }
 }
 
 module.exports.TestElementsFromLayersLoader = TestElementsFromLayersLoader;

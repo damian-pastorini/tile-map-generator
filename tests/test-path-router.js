@@ -76,6 +76,46 @@ class TestPathRouter extends BaseMapGeneratorTest
         });
     }
 
+    async testFindPathToPointsDirectMatch()
+    {
+        await this.test('findPathToPoints returns the direct path when found', async () => {
+            let grid = {isWalkableAt: () => true};
+            let pathFinder = {findPath: () => [[0, 0], [1, 1]]};
+            let router = new PathRouter(pathFinder, new GeometryCalculator());
+            let result = router.findPathToPoints({x: 0, y: 0}, {x: 2, y: 2}, [{x: 0, y: 0}], grid);
+            this.assertEqual(result.length, 2, 'Direct path of length two returned');
+            this.assertEqual(result[1][0], 1, 'Second step x preserved');
+        });
+    }
+
+    async testFindPathToPointsRetriesOverPositions()
+    {
+        await this.test('findPathToPoints retries other positions until a path is found', async () => {
+            let grid = {isWalkableAt: () => true};
+            let pathFinder = {findPath: (start, end) => end && 3 === end.x ? [[3, 3]] : []};
+            let router = new PathRouter(pathFinder, new GeometryCalculator());
+            let result = router.findPathToPoints(
+                {x: 0, y: 0},
+                {x: 2, y: 2},
+                [{x: 0, y: 0}, {x: 3, y: 3}],
+                grid
+            );
+            this.assertEqual(result.length, 1, 'Retry found a path of length one');
+            this.assertEqual(result[0][0], 3, 'Path corresponds to the retried position');
+        });
+    }
+
+    async testFindPathToPointsReturnsEmptyWhenUnreachable()
+    {
+        await this.test('findPathToPoints returns empty path when nothing connects', async () => {
+            let grid = {isWalkableAt: () => false};
+            let pathFinder = {findPath: () => []};
+            let router = new PathRouter(pathFinder, new GeometryCalculator());
+            let result = router.findPathToPoints({x: 1, y: 1}, {x: 2, y: 2}, [{x: 1, y: 1}], grid);
+            this.assertEqual(result.length, 0, 'No path found yields empty array');
+        });
+    }
+
 }
 
 module.exports.TestPathRouter = TestPathRouter;

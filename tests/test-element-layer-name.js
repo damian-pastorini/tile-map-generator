@@ -144,6 +144,41 @@ class TestElementLayerName extends BaseMapGeneratorTest
         });
     }
 
+    async testParseFusedNameWithIndex()
+    {
+        await this.test('parse splits a fused name into base and trailing index', async () => {
+            let parsed = this.elementLayerName.parse('tree0-collisions');
+            this.assertEqual(parsed.base, 'tree', 'Base drops the fused index');
+            this.assertEqual(parsed.index, 0, 'Index is the fused trailing number');
+            this.assertEqual(parsed.layerType, 'collisions', 'Layer type is recovered');
+            this.assertEqual(parsed.instanceId, 'tree0', 'Instance id keeps the fused number');
+            let parsedTen = this.elementLayerName.parse('tree10-over-player');
+            this.assertEqual(parsedTen.base, 'tree', 'Base drops the fused index');
+            this.assertEqual(parsedTen.index, 10, 'Index is the fused trailing number');
+            this.assertEqual(parsedTen.instanceId, 'tree10', 'Instance id keeps the fused number');
+        });
+    }
+
+    async testParseFusedNameWithoutIndex()
+    {
+        await this.test('parse keeps a plain prefixed name with no trailing digits at index zero', async () => {
+            let parsed = this.elementLayerName.parse('tree-collisions');
+            this.assertEqual(parsed.base, 'tree', 'Base is the prefix');
+            this.assertEqual(parsed.index, 0, 'Index defaults to zero without trailing digits');
+            this.assertEqual(parsed.layerType, 'collisions', 'Layer type is recovered');
+            this.assertEqual(parsed.instanceId, 'tree', 'Instance id is the prefix');
+        });
+    }
+
+    async testParseReturnsNullForNonElementNames()
+    {
+        await this.test('parse returns null for empty, typeless and empty-prefix names', async () => {
+            this.assertEqual(this.elementLayerName.parse(''), null, 'Empty name yields null');
+            this.assertEqual(this.elementLayerName.parse('ground'), null, 'A name with no element layer type yields null');
+            this.assertEqual(this.elementLayerName.parse('-collisions'), null, 'A typed name with an empty prefix yields null');
+        });
+    }
+
     async testParseHandlesElementKeyEndingInDigits()
     {
         await this.test('parse keeps an element key ending in digits out of the instance index', async () => {

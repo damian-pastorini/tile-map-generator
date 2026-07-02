@@ -63,6 +63,25 @@ class TestElementDeleter extends BaseMapGeneratorTest
         });
     }
 
+    async testDeleteSkipsLayerMissingFromMap()
+    {
+        await this.test('Delete skips element layers absent from the map and still removes the entry', async () => {
+            let mapJson = ElementFixtures.buildMap([
+                ElementFixtures.buildLayer('ground', [1, 1, 1, 1])
+            ], 2, 2);
+            let mapElements = {
+                elements: [ElementFixtures.buildElement('tree-001', 'tree', 1,
+                    {col: 0, row: 0, width: 1, height: 1},
+                    [ElementFixtures.buildElementLayer('tree-001-ghost', 'below-player', [{col: 0, row: 0, gid: 100}])]
+                )]
+            };
+            let result = new ElementDeleter().delete(mapJson, mapElements, 'tree-001');
+            this.assert(result.success, 'Delete should succeed even when the layer is missing');
+            this.assertDeepEqual(mapJson.layers[0].data, [1, 1, 1, 1], 'Unrelated map layer is untouched');
+            this.assertEqual(mapElements.elements.length, 0, 'Element entry should be removed');
+        });
+    }
+
     async testDeleteMultiLayerElement()
     {
         await this.test('Multi-layer element fully cleared', async () => {

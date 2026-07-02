@@ -91,6 +91,28 @@ class TestWangsetMapper extends BaseMapGeneratorTest
         });
     }
 
+    async testMapPositionsFromWangsetGuardsFalsyWangset()
+    {
+        let wangset = {name: 'path', firstgid: 1, wangtiles: [], tilesProperties: []};
+        await this.test('mapPositionsFromWangset returns early without mutating positions for a falsy wangset', async () => {
+            let mapper = new WangsetMapper(wangset);
+            mapper.surroundingTilesPosition['middle-center'] = 7;
+            mapper.mapPositionsFromWangset(false);
+            this.assertEqual(mapper.surroundingTilesPosition['middle-center'], 7, 'Existing positions should be untouched');
+            this.assertEqual(Object.keys(mapper.cornersPosition).length, 0, 'No corners should be added for a falsy wangset');
+        });
+    }
+
+    async testInvertMapHandlesEmptySource()
+    {
+        let wangset = this.buildWangset();
+        await this.test('invertMap returns an empty object for an empty source map', async () => {
+            let mapper = new WangsetMapper(wangset);
+            let inverted = mapper.invertMap({});
+            this.assertEqual(Object.keys(inverted).length, 0, 'Inverting an empty map should yield an empty map');
+        });
+    }
+
 }
 
 module.exports.TestWangsetMapper = TestWangsetMapper;

@@ -22,6 +22,7 @@ node_modules/
 /.claude/skills/
 .idea
 **/generated/
+**/generated-*/
 patches/*
 /.claude/hook-state.json
 /.playwright-mcp

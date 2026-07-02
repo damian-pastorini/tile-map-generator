@@ -85,6 +85,50 @@ class TestElementMover extends BaseMapGeneratorTest
         });
     }
 
+    async testMoveOutOfBoundsTop()
+    {
+        await this.test('Move out of bounds (top) rejected', async () => {
+            let mapJson = ElementFixtures.buildSingleTileTreeMap();
+            let result = new ElementMover().move(mapJson, ElementFixtures.buildSingleTileTreeElements(), 'tree-001', 0, -2);
+            this.assert(!result.success);
+            this.assertEqual(result.error, 'outOfBounds');
+            this.assertEqual(mapJson.layers[0].data[5], 100, 'Position should remain unchanged');
+        });
+    }
+
+    async testMoveOutOfBoundsBottom()
+    {
+        await this.test('Move out of bounds (bottom) rejected', async () => {
+            let result = new ElementMover().move(
+                ElementFixtures.buildSingleTileTreeMap(),
+                ElementFixtures.buildSingleTileTreeElements(),
+                'tree-001', 0, 5
+            );
+            this.assert(!result.success);
+            this.assertEqual(result.error, 'outOfBounds');
+        });
+    }
+
+    async testMoveSkipsLayerMissingFromMap()
+    {
+        await this.test('Move succeeds and updates bounds when an element layer is not present in the map', async () => {
+            let mapJson = ElementFixtures.buildMap([
+                ElementFixtures.buildLayer('ground', ElementFixtures.gridWithTileAt(0, 0, 1))
+            ]);
+            let mapElements = {
+                elements: [ElementFixtures.buildElement('tree-001', 'tree', 1,
+                    {col: 1, row: 1, width: 1, height: 1},
+                    [ElementFixtures.buildElementLayer('tree-001-ghost', 'below-player', [{col: 1, row: 1, gid: 100}])]
+                )]
+            };
+            let result = new ElementMover().move(mapJson, mapElements, 'tree-001', 1, 1);
+            this.assert(result.success, 'Move should succeed even when the layer is missing from the map');
+            this.assertEqual(mapElements.elements[0].bounds.col, 2, 'Bounds col should still advance');
+            this.assertEqual(mapElements.elements[0].bounds.row, 2, 'Bounds row should still advance');
+            this.assertDeepEqual(mapJson.layers[0].data, ElementFixtures.gridWithTileAt(0, 0, 1), 'Unrelated map layer is untouched');
+        });
+    }
+
     async testMoveMultiLayerElement()
     {
         await this.test('Multi-layer element translated together', async () => {

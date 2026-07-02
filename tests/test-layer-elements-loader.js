@@ -55,6 +55,28 @@ class TestLayerElementsLoader extends BaseMapGeneratorTest
         });
     }
 
+    async testLoadMapDataReturnsParsedJson()
+    {
+        await this.test('loadMapData parses an existing map data file', async () => {
+            let loader = new LayerElementsLoader({rootFolder: this.testDataFolder, mapDataFile: 'tree.json'});
+            let data = loader.loadMapData();
+            this.assert(data, 'Expected parsed map data');
+            this.assertEqual(data.type, 'map', 'Expected Tiled map type from parsed file');
+            this.assert(Array.isArray(data.layers), 'Expected layers array from parsed file');
+        });
+    }
+
+    async testLoadJsonFromFileReturnsParsedJson()
+    {
+        await this.test('loadJsonFromFile parses an existing JSON file', async () => {
+            let loader = new LayerElementsLoader({rootFolder: this.testDataFolder});
+            let json = loader.loadJsonFromFile('tree.json');
+            this.assert(json, 'Expected parsed JSON');
+            this.assertEqual(json.width, 6, 'Expected tree map width parsed from file');
+            this.assertEqual(json.layers[0].name, 'tree-base', 'Expected first layer name parsed from file');
+        });
+    }
+
 }
 
 module.exports.TestLayerElementsLoader = TestLayerElementsLoader;

@@ -7,6 +7,7 @@
 const { BaseMapGeneratorTest } = require('./base-map-generator-test');
 const { MapLayersComposer } = require('../lib/generator/map-layers-composer');
 const { LayerDataFactory } = require('../lib/map/layer-data-factory');
+const { PropertiesMapper } = require('../lib/generator/properties-mapper');
 
 class TestMapLayersComposer extends BaseMapGeneratorTest
 {
@@ -19,6 +20,7 @@ class TestMapLayersComposer extends BaseMapGeneratorTest
         };
         if(overrides){
             Object.assign(generator, overrides);
+            return generator;
         }
         return generator;
     }
@@ -133,6 +135,71 @@ class TestMapLayersComposer extends BaseMapGeneratorTest
             this.assert(result[0].name.startsWith('merge-'), 'Expected merge prefix on combined layer');
             this.assertDeepEqual(result[0].data, [1, 2, 0]);
             this.assertEqual(result[1].name, 'other');
+        });
+    }
+
+    async testCalculateTargetIndexStringReference()
+    {
+        await this.test('calculateTargetIndex resolves string depth to reference layer index plus one', async () => {
+            let composer = new MapLayersComposer(this.buildGeneratorStub());
+            let layerMap = new Map();
+            layerMap.set('ground', 3);
+            this.assertEqual(composer.calculateTargetIndex('ground', 10, layerMap), 4);
+        });
+    }
+
+    async testCalculateTargetIndexStringMissingReference()
+    {
+        await this.test('calculateTargetIndex falls back to 1 when string reference is missing', async () => {
+            let composer = new MapLayersComposer(this.buildGeneratorStub());
+            let layerMap = new Map();
+            this.assertEqual(composer.calculateTargetIndex('missing', 10, layerMap), 1);
+        });
+    }
+
+    async testGenerateLayersListThroughGeneration()
+    {
+        await this.test('generateLayersList yields sequential ids and a ground layer', async () => {
+            let config = this.setupBasicConfig();
+            Math.random = this.seedRandom(909);
+            try {
+                let map = await this.testCurrentGeneration(config);
+                this.assert(map, 'Expected a generated map');
+                let groundLayer = map.layers.find(layer => 'ground' === layer.name);
+                this.assert(groundLayer, 'Expected a ground layer');
+                for(let i = 0; i < map.layers.length; i++){
+                    this.assertEqual(map.layers[i].id, i + 1);
+                }
+            } finally {
+                this.restoreMathRandom();
+            }
+        });
+    }
+
+    async testReorderLayersBasedOnSpotsThroughGeneration()
+    {
+        await this.test('reorderLayersBasedOnSpots positions a depth spot right after ground', async () => {
+            let config = this.setupBasicConfig();
+            config.groundSpots = {
+                'depth-spot': {
+                    quantity: 1, width: 3, height: 3, walkable: true, isElement: true,
+                    layerName: 'ground-spot-depth-spot', tilesKey: 'depth-spot',
+                    spotTile: 116, depth: 'ground', freeSpaceAround: 1
+                }
+            };
+            config.groundSpotsPropertiesMappers = {'depth-spot': new PropertiesMapper('depth-spot')};
+            Math.random = this.seedRandom(77702);
+            try {
+                let map = await this.testCurrentGeneration(config);
+                this.assert(map, 'Expected a generated map');
+                let groundIndex = map.layers.findIndex(layer => 'ground' === layer.name);
+                let spotIndex = map.layers.findIndex(layer => -1 !== layer.name.indexOf('depth-spot'));
+                this.assert(-1 !== groundIndex, 'Expected a ground layer');
+                this.assert(-1 !== spotIndex, 'Expected a depth spot layer');
+                this.assertEqual(spotIndex, groundIndex + 1);
+            } finally {
+                this.restoreMathRandom();
+            }
         });
     }
 

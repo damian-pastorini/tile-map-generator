@@ -86,6 +86,13 @@ class TestElementNameSuffix extends BaseMapGeneratorTest
             this.assertEqual(ElementNameSuffix.resolveUnique(existing, 'tree'), 'tree-003');
         });
     }
+
+    async testResolveUniqueStartsAtTwoWithoutNumberedSiblings()
+    {
+        await this.test('resolveUnique starts at -002 when the bare name is taken but has no numbered siblings', async () => {
+            this.assertEqual(ElementNameSuffix.resolveUnique(['tree'], 'tree'), 'tree-002');
+        });
+    }
 }
 
 module.exports.TestElementNameSuffix = TestElementNameSuffix;

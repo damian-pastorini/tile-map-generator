@@ -26,6 +26,18 @@ class TestPathTilesFinisher extends BaseMapGeneratorTest
         );
     }
 
+    buildFinisherWith(mapGridBuilder, wallsGenerator, mapWidth)
+    {
+        return new PathTilesFinisher(
+            new BordersPatterns(),
+            new LayerDataFactory(),
+            mapGridBuilder,
+            wallsGenerator,
+            new GeometryCalculator(),
+            new TilePositionCalculator({mapWidth, mapHeight: 0})
+        );
+    }
+
     async testFillPathSingleTiles()
     {
         await this.test('fillPathSingleTiles bridges single empty gap between path tiles', async () => {
@@ -74,6 +86,85 @@ class TestPathTilesFinisher extends BaseMapGeneratorTest
             this.assertEqual(result[1], 0, 'Bottom center value on top row removed');
             this.assertEqual(result[6], 0, 'Top corner value on bottom row removed');
             this.assertEqual(result[7], 0, 'Top center value on bottom row removed');
+        });
+    }
+
+    async testApplyCleanPathBorderTilesRemovesOccupied()
+    {
+        await this.test('applyCleanPathBorderTiles clears non path tiles on occupied cells', async () => {
+            let finisher = this.buildFinisherWith({isOccupiedByAnotherCollision: () => true}, null, 2);
+            let splitBorderLayer = [7, 5, 5, 5];
+            let result = finisher.applyCleanPathBorderTiles(splitBorderLayer, 2, 2, [], true, 7);
+            this.assertEqual(result[0], 7, 'Path tile preserved on occupied cell');
+            this.assertEqual(result[1], 0, 'Non path tile cleared');
+            this.assertEqual(result[2], 0, 'Non path tile cleared');
+            this.assertEqual(result[3], 0, 'Non path tile cleared');
+        });
+    }
+
+    async testCreatePathInnerWallsDisabled()
+    {
+        await this.test('createPathInnerWalls returns false when disabled', async () => {
+            let finisher = this.buildFinisher(3);
+            let result = finisher.createPathInnerWalls([0, 0, 0], 3, 1, {}, false, 'key');
+            this.assertEqual(result, false, 'Disabled inner walls returns false');
+        });
+    }
+
+    async testCreatePathInnerWallsDelegates()
+    {
+        await this.test('createPathInnerWalls delegates to walls generator when enabled', async () => {
+            let captured = {};
+            let wallsGenerator = {
+                createLayerInnerWalls(layer, key, shortcuts, width, height)
+                {
+                    captured = {layer, key, width, height};
+                    return ['INNER'];
+                }
+            };
+            let finisher = this.buildFinisherWith({isOccupiedByAnotherCollision: () => false}, wallsGenerator, 3);
+            let layer = [7, 0, 7];
+            let result = finisher.createPathInnerWalls(layer, 3, 1, {p: 1}, true, 'innerKey');
+            this.assertEqual(result[0], 'INNER', 'Returns the walls generator output');
+            this.assertEqual(captured.key, 'innerKey', 'Inner walls tiles key passed through');
+            this.assertEqual(captured.width, 3, 'Map width passed through');
+            this.assertEqual(captured.layer, layer, 'Split border layer passed through');
+        });
+    }
+
+    async testCreatePathOuterWallsDisabled()
+    {
+        await this.test('createPathOuterWalls returns false when disabled', async () => {
+            let finisher = this.buildFinisher(3);
+            let result = await finisher.createPathOuterWalls([0, 0, 0], 3, 1, false, {}, false, 'key');
+            this.assertEqual(result, false, 'Disabled outer walls returns false');
+        });
+    }
+
+    async testCreatePathOuterWallsDelegates()
+    {
+        await this.test('createPathOuterWalls delegates to walls generator when enabled', async () => {
+            let captured = {};
+            let wallsGenerator = {
+                async createLayerOuterWalls(layer, key, shortcuts, width, height, innerLayer)
+                {
+                    captured = {key, width, innerLayer};
+                    return ['OUTER'];
+                }
+            };
+            let finisher = this.buildFinisherWith({isOccupiedByAnotherCollision: () => false}, wallsGenerator, 3);
+            let result = await finisher.createPathOuterWalls(
+                [7, 0, 7],
+                3,
+                1,
+                ['INNER'],
+                {p: 1},
+                true,
+                'outerKey'
+            );
+            this.assertEqual(result[0], 'OUTER', 'Returns the outer walls output');
+            this.assertEqual(captured.key, 'outerKey', 'Outer walls tiles key passed through');
+            this.assertEqual(captured.innerLayer[0], 'INNER', 'Inner walls layer forwarded');
         });
     }
 

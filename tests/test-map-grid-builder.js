@@ -7,6 +7,9 @@
 const { BaseMapGeneratorTest } = require('./base-map-generator-test');
 const { MapGridBuilder } = require('../lib/generator/map-grid-builder');
 const { TilePositionCalculator } = require('../lib/generator/tile-position-calculator');
+const { LayerDataFactory } = require('../lib/map/layer-data-factory');
+const { MapLayersComposer } = require('../lib/generator/map-layers-composer');
+const { PathFinder } = require('../lib/path-finder/path-finder');
 
 class TestMapGridBuilder extends BaseMapGeneratorTest
 {
@@ -28,10 +31,7 @@ class TestMapGridBuilder extends BaseMapGeneratorTest
             blockMapBorder: false
         };
         generator.tilePositionCalculator = new TilePositionCalculator(generator);
-        if(overrides){
-            Object.assign(generator, overrides);
-        }
-        return generator;
+        return overrides ? Object.assign(generator, overrides) : generator;
     }
 
     async testConstruction()
@@ -122,6 +122,75 @@ class TestMapGridBuilder extends BaseMapGeneratorTest
             this.assertEqual(mapGrid[3][3], true);
             this.assertEqual(mapGrid[0][0], false);
             this.assertEqual(mapGrid[4][4], false);
+        });
+    }
+
+    async testSetMapSizeReturnsProvidedDimensions()
+    {
+        await this.test('setMapSize returns provided positive dimensions', async () => {
+            let builder = new MapGridBuilder(this.buildGeneratorStub());
+            let result = builder.setMapSize({mapWidth: 7, mapHeight: 9});
+            this.assertEqual(result.mapWidth, 7);
+            this.assertEqual(result.mapHeight, 9);
+        });
+    }
+
+    async testCalculateMapSizeWithFreeSpace()
+    {
+        await this.test('calculateMapSizeWithFreeSpace computes size from element area', async () => {
+            let generator = this.buildGeneratorStub({
+                layerElements: {tree: [{type: 'tilelayer', width: 2, height: 2}]},
+                elementsQuantity: {tree: 1},
+                elementsPlacer: {determineElementFreeSpaceAround: () => 0},
+                groundSpots: {}
+            });
+            generator.mapLayersComposer = new MapLayersComposer(generator);
+            let builder = new MapGridBuilder(generator);
+            let result = builder.calculateMapSizeWithFreeSpace();
+            this.assertEqual(result.mapWidth, 2);
+            this.assertEqual(result.mapHeight, 2);
+        });
+    }
+
+    async testCalculateMapSizeWithFreeSpaceNoElementsReturnsFalse()
+    {
+        await this.test('calculateMapSizeWithFreeSpace returns false without layer elements', async () => {
+            let builder = new MapGridBuilder(this.buildGeneratorStub({layerElements: null}));
+            this.assertEqual(builder.calculateMapSizeWithFreeSpace(), false);
+        });
+    }
+
+    async testCalculateMapSizeWithFreeSpaceNoQuantityReturnsFalse()
+    {
+        await this.test('calculateMapSizeWithFreeSpace returns false without elements quantity', async () => {
+            let builder = new MapGridBuilder(this.buildGeneratorStub({layerElements: {tree: []}, elementsQuantity: {}}));
+            this.assertEqual(builder.calculateMapSizeWithFreeSpace(), false);
+        });
+    }
+
+    async testCreatePathfindingGrid()
+    {
+        await this.test('createPathfindingGrid blocks collision tiles and mapGrid-false cells', async () => {
+            let generator = this.buildGeneratorStub({mapWidth: 3, mapHeight: 3, layerDataFactory: new LayerDataFactory()});
+            let builder = new MapGridBuilder(generator);
+            let mapGrid = Array.from({length: 3}, () => Array(3).fill(true));
+            mapGrid[2][2] = false;
+            let additionalLayers = [{name: 'tree-collisions', data: [0, 0, 0, 0, 7, 0, 0, 0, 0]}];
+            let result = builder.createPathfindingGrid(
+                new PathFinder(),
+                3,
+                3,
+                [],
+                additionalLayers,
+                ['collisions'],
+                mapGrid
+            );
+            this.assertEqual(result.grid.isWalkableAt(1, 1), false);
+            this.assertEqual(result.grid.isWalkableAt(0, 0), true);
+            this.assertEqual(result.grid.isWalkableAt(2, 2), false);
+            this.assertEqual(result.debugLayerData[4], 2);
+            this.assertEqual(result.debugLayerData[8], 2);
+            this.assertEqual(result.debugLayerData[0], 0);
         });
     }
 

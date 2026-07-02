@@ -5,6 +5,7 @@
  */
 
 const { RandomMapGenerator } = require('../lib/random-map-generator');
+const { GeneratedFoldersConstants } = require('../lib/constants');
 const { FileHandler } = require('@reldens/server-utils');
 const { Logger } = require('@reldens/utils');
 
@@ -30,7 +31,7 @@ class BaseMapGeneratorTest
         if(!FileHandler.exists(this.testDataFolder)){
             FileHandler.createFolder(this.testDataFolder);
         }
-        let filesToCopy = ['house-001.json', 'house-002.json', 'tree.json', 'tilesheet.png'];
+        let filesToCopy = ['house-001.json', 'house-002.json', 'tree.json', 'tilesheet.png', 'map-data.json'];
         for(let fileName of filesToCopy){
             let sourcePath = FileHandler.joinPaths(examplesPath, fileName);
             let targetPath = FileHandler.joinPaths(this.testDataFolder, fileName);
@@ -39,7 +40,22 @@ class BaseMapGeneratorTest
             }
         }
         let compositePath = FileHandler.joinPaths(__dirname, '..', 'examples', 'layer-elements-composite');
-        let compositeFiles = ['reldens-town-composite.json', 'terrain.png'];
+        let compositeFiles = [
+            'reldens-town-composite.json',
+            'reldens-town-composite-with-associations.json',
+            'house-composite.json',
+            'reldens-dungeon-composite.json',
+            'terrain.png',
+            'house.png',
+            'doors.png',
+            'inside.png',
+            'outside.png',
+            'water.png',
+            'map-composite-data.json',
+            'map-composite-data-with-names.json',
+            'map-composite-data-with-associations.json',
+            'map-composite-data-dungeon.json'
+        ];
         for(let fileName of compositeFiles){
             let sourcePath = FileHandler.joinPaths(compositePath, fileName);
             let targetPath = FileHandler.joinPaths(this.testDataFolder, fileName);
@@ -116,6 +132,15 @@ class BaseMapGeneratorTest
         if(actualStr !== expectedStr){
             throw new Error(message || 'Deep equality failed');
         }
+    }
+
+    assertOptimizedFolderCleaned(generatedFolder)
+    {
+        let optimizedFolder = FileHandler.joinPaths(generatedFolder, GeneratedFoldersConstants.OPTIMIZED_SUB_FOLDER);
+        this.assert(
+            !FileHandler.exists(optimizedFolder),
+            'The optimizer intermediates folder must be fully cleaned after generation'
+        );
     }
 
     async testCurrentGeneration(config)

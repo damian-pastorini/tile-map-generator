@@ -135,6 +135,56 @@ class TestTilesShortcuts extends BaseMapGeneratorTest
         });
     }
 
+    async testFromPropertiesMappersListUsesPropertiesMapperWithPrefix()
+    {
+        let propertiesMapper = {surroundingTilesPosition: {}, cornersPosition: {}};
+        propertiesMapper.surroundingTilesPosition['ground-middle-center'] = 55;
+        propertiesMapper.surroundingTilesPosition['ground-top-left'] = 51;
+        propertiesMapper.cornersPosition['ground-top-left'] = 60;
+        await this.test('fromPropertiesMappersList uses the properties mapper and applies the tilesKey prefix', async () => {
+            let instance = TilesShortcuts.fromPropertiesMappersList('ground', 55, propertiesMapper, '', {}, null);
+            this.assert(instance instanceof TilesShortcuts, 'Should return a TilesShortcuts instance');
+            this.assertEqual(instance.sMC, 55, 'middle-center should be read with the ground- prefix');
+            this.assertEqual(instance.sTL, 51, 'top-left should be read with the ground- prefix');
+            this.assertEqual(instance.cTL, 60, 'corner top-left should be read with the ground- prefix');
+            this.assertEqual(instance.p, 55, 'path tile should be the provided main tile');
+            this.assertEqual(instance.pathTileReplacement, null, 'No path replacement for a non-path tilesKey');
+        });
+    }
+
+    async testFromPropertiesMappersListResolvesSuffixFromGroundSpots()
+    {
+        let groundSpotsPropertiesMappers = {};
+        groundSpotsPropertiesMappers['ground-spot'] = {
+            surroundingTilesPosition: {'ground-spot-middle-center': 77, 'ground-spot-top-left': 71},
+            cornersPosition: {'ground-spot-top-left': 88}
+        };
+        await this.test('fromPropertiesMappersList resolves a suffixed key from groundSpotsPropertiesMappers', async () => {
+            let instance = TilesShortcuts.fromPropertiesMappersList(
+                'ground',
+                77,
+                null,
+                '-spot',
+                groundSpotsPropertiesMappers,
+                null
+            );
+            this.assertEqual(instance.sMC, 77, 'middle-center should be read with the ground-spot- prefix');
+            this.assertEqual(instance.sTL, 71, 'top-left should be read with the ground-spot- prefix');
+            this.assertEqual(instance.cTL, 88, 'corner top-left should be read with the ground-spot- prefix');
+        });
+    }
+
+    async testFromPropertiesMappersListFallsBackToWangsetWhenCornersEmpty()
+    {
+        let tileset = this.buildWangsetTileset();
+        let propertiesMapper = {surroundingTilesPosition: {'ground-middle-center': 5}, cornersPosition: {}};
+        await this.test('fromPropertiesMappersList falls back to wangset data when corners are empty', async () => {
+            let instance = TilesShortcuts.fromPropertiesMappersList('path', 0, propertiesMapper, '', {}, tileset);
+            this.assertEqual(instance.sMC, 5, 'middle-center should come from the wangset fallback');
+            this.assertEqual(instance.pathTileReplacement, 5, 'pathTileReplacement should be set from the wangset fallback');
+        });
+    }
+
 }
 
 module.exports.TestTilesShortcuts = TestTilesShortcuts;

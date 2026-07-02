@@ -126,6 +126,58 @@ class TestGraphAlgorithms extends BaseMapGeneratorTest
         });
     }
 
+    async testFindPathTilePositions()
+    {
+        let graph = new GraphAlgorithms();
+        await this.test('findPathTilePositions returns coordinates for matching path tiles', async () => {
+            let positions = graph.findPathTilePositions([5, 0, 5, 0], 4, 1, 5);
+            this.assertEqual(positions.length, 2, 'two matching path tiles');
+            this.assertEqual(positions[0].x, 0, 'first match x');
+            this.assertEqual(positions[0].y, 0, 'first match y');
+            this.assertEqual(positions[1].x, 2, 'second match x');
+        });
+    }
+
+    async testCreateGraphFromPositions()
+    {
+        let graph = new GraphAlgorithms();
+        await this.test('createGraphFromPositions links orthogonally adjacent positions', async () => {
+            let positions = [{x: 0, y: 0}, {x: 1, y: 0}, {x: 1, y: 1}];
+            let adjacency = graph.createGraphFromPositions(positions, 2, 2);
+            this.assertEqual(adjacency.size, 3, 'three nodes registered');
+            this.assertDeepEqual(adjacency.get('0,0'), ['1,0'], '0,0 links only to 1,0');
+            this.assertEqual(adjacency.get('1,0').length, 2, '1,0 links to both neighbors');
+            this.assertDeepEqual(adjacency.get('1,1'), ['1,0'], '1,1 links only to 1,0');
+        });
+    }
+
+    async testFindConnectedComponents()
+    {
+        let graph = new GraphAlgorithms();
+        await this.test('findConnectedComponents groups nodes into separate components', async () => {
+            let map = {width: 5, height: 1, layers: [{name: 'path', data: [5, 5, 0, 5, 5]}]};
+            graph.buildConnectivityGraph(map, 5);
+            let components = graph.findConnectedComponents();
+            this.assertEqual(components.length, 2, 'two disconnected components');
+            let sizes = components.map(c => c.length).sort();
+            this.assertDeepEqual(sizes, [2, 2], 'each component has two nodes');
+        });
+    }
+
+    async testDepthFirstSearchComponent()
+    {
+        let graph = new GraphAlgorithms();
+        await this.test('depthFirstSearchComponent collects all reachable nodes from a start', async () => {
+            let map = {width: 3, height: 1, layers: [{name: 'path', data: [5, 5, 5]}]};
+            graph.buildConnectivityGraph(map, 5);
+            let visited = new Set();
+            let component = graph.depthFirstSearchComponent('0,0', visited);
+            this.assertEqual(component.length, 3, 'all three connected nodes visited');
+            this.assert(-1 !== component.indexOf('2,0'), 'far node reached via traversal');
+            this.assertEqual(visited.size, 3, 'visited set tracks every node');
+        });
+    }
+
     async testClearGraph()
     {
         let graph = new GraphAlgorithms();

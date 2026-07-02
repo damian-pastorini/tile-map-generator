@@ -74,6 +74,35 @@ class TestTileVariationsApplier extends BaseMapGeneratorTest
         });
     }
 
+    assertChangesOnlyOnReference(applyData, referenceData)
+    {
+        let positions = applyData.map((tile, index) => index).filter(index => 70 === applyData[index]);
+        for(let position of positions){
+            this.assertEqual(referenceData[position], 9, 'Only positions whose reference value is 9 may change');
+        }
+        return positions.length;
+    }
+
+    async testAppliesOnMatchingReferenceValue()
+    {
+        let referenceData = new Array(16).fill(9);
+        let applyData = new Array(16).fill(0);
+        let variations = [70];
+        await this.test('applyTilesVariations applies on positions matching the reference value', async () => {
+            Math.random = this.seedRandom(777);
+            try {
+                let applier = new TileVariationsApplier();
+                let result = applier.applyTilesVariations(applyData, 4, 4, 16, variations, 100, referenceData, 9);
+                this.assertEqual(result, applyData, 'Should return the same apply data array');
+                let changed = this.assertChangesOnlyOnReference(applyData, referenceData);
+                this.assert(0 < changed, 'At least one matching position should have been changed');
+                this.assert(changed <= 16, 'Applied changes should not exceed the requested amount');
+            } finally {
+                this.restoreMathRandom();
+            }
+        });
+    }
+
     async testZeroPercentageChangesNothing()
     {
         let layerData = new Array(16).fill(0);

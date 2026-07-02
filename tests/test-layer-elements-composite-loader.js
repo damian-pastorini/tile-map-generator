@@ -70,6 +70,19 @@ class TestLayerElementsCompositeLoader extends BaseMapGeneratorTest
         });
     }
 
+    async testLoadPayloadLoadsCompositeFromFile()
+    {
+        await this.test('loadPayload loads tileMapJSON from the composite elements file', async () => {
+            let loader = new LayerElementsCompositeLoader({rootFolder: this.testDataFolder});
+            loader.mapData = {compositeElementsFile: 'reldens-town-composite.json'};
+            let result = loader.loadPayload();
+            this.assertEqual(result, true, 'Expected loadPayload to succeed');
+            this.assert(loader.tileMapJSON, 'Expected tileMapJSON to be set');
+            this.assert(Array.isArray(loader.tileMapJSON.layers), 'Expected composite layers parsed');
+            this.assert(0 < loader.tileMapJSON.layers.length, 'Expected at least one composite layer');
+        });
+    }
+
 }
 
 module.exports.TestLayerElementsCompositeLoader = TestLayerElementsCompositeLoader;

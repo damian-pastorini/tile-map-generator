@@ -85,6 +85,53 @@ class TestSpotBorderAnalyzer extends BaseMapGeneratorTest
         });
     }
 
+    async testFetchRandomBorderTileIndex()
+    {
+        Math.random = this.seedRandom(13579);
+        try {
+            await this.test('fetchRandomBorderTileIndex returns an edge tile index from the candidates', async () => {
+                let analyzer = new SpotBorderAnalyzer(new LayerDataFactory());
+                let borderTiles = [0, 1, 2];
+                let result = analyzer.fetchRandomBorderTileIndex(borderTiles, 3, 3, false);
+                this.assert(-1 !== borderTiles.indexOf(result), 'Result is one of the border tiles');
+            });
+        } finally {
+            this.restoreMathRandom();
+        }
+    }
+
+    async testFetchPathTileIndexesSingleSize()
+    {
+        Math.random = this.seedRandom(24680);
+        try {
+            await this.test('fetchPathTileIndexes returns a single border tile for path size one', async () => {
+                let analyzer = new SpotBorderAnalyzer(new LayerDataFactory());
+                let borderTiles = [0, 1, 2];
+                let result = analyzer.fetchPathTileIndexes(borderTiles, 3, 3, false, 1);
+                this.assertEqual(result.length, 1, 'One tile selected for path size one');
+                this.assert(-1 !== borderTiles.indexOf(result[0]), 'Selected tile is a border tile');
+            });
+        } finally {
+            this.restoreMathRandom();
+        }
+    }
+
+    async testFetchPathTileIndexesUsesContinuousSequence()
+    {
+        Math.random = this.seedRandom(11111);
+        try {
+            await this.test('fetchPathTileIndexes returns a continuous sequence for larger path size', async () => {
+                let analyzer = new SpotBorderAnalyzer(new LayerDataFactory());
+                let borderTiles = [0, 1, 2];
+                let result = analyzer.fetchPathTileIndexes(borderTiles, 3, 3, false, 3);
+                this.assertEqual(result.length, 3, 'Sequence of three returned');
+                this.assertDeepEqual(result, [0, 1, 2], 'Continuous horizontal sequence returned');
+            });
+        } finally {
+            this.restoreMathRandom();
+        }
+    }
+
 }
 
 module.exports.TestSpotBorderAnalyzer = TestSpotBorderAnalyzer;

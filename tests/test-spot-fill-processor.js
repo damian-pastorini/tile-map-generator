@@ -70,6 +70,30 @@ class TestSpotFillProcessor extends BaseMapGeneratorTest
         });
     }
 
+    async testFillEmptyTilesBetweenBordersAndSpotGround()
+    {
+        await this.test('fillEmptyTilesBetweenBordersAndSpotGround fills gap between two spot tiles', async () => {
+            let processor = this.buildProcessor();
+            let spotLayer = [5, 0, 5];
+            let bordersLayer = [0, 0, 0];
+            let result = processor.fillEmptyTilesBetweenBordersAndSpotGround(spotLayer, bordersLayer, 3, 1, 5);
+            this.assertEqual(result[0], 5, 'First spot tile preserved');
+            this.assertEqual(result[1], 5, 'Gap between spot tiles filled');
+            this.assertEqual(result[2], 5, 'Last spot tile preserved');
+        });
+    }
+
+    async testFillEmptyTilesBetweenBordersAndSpotGroundLeavesBorderGap()
+    {
+        await this.test('fillEmptyTilesBetweenBordersAndSpotGround keeps gap that is purely border bounded', async () => {
+            let processor = this.buildProcessor();
+            let spotLayer = [0, 0, 0];
+            let bordersLayer = [9, 0, 9];
+            let result = processor.fillEmptyTilesBetweenBordersAndSpotGround(spotLayer, bordersLayer, 3, 1, 5);
+            this.assertEqual(result[1], 0, 'Gap between only borders is not filled with spot tile');
+        });
+    }
+
     async testIncreaseLayerSize()
     {
         await this.test('increaseLayerSize pads layer dimensions and data', async () => {
