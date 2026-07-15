@@ -61,6 +61,9 @@ class TestAssociatedMaps extends BaseMapGeneratorTest
 
     fetchPathFinderGridFiles(generatedFolder)
     {
+        if(!FileHandler.exists(generatedFolder)){
+            return [];
+        }
         let files = FileHandler.readFolder(generatedFolder);
         if(!sc.isArray(files)){
             return [];

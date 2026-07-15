@@ -18,6 +18,7 @@ const { ElementsFromLayersLoader } = require('./lib/loader/elements-from-layers-
 const { ElementMover } = require('./lib/map/element-mover');
 const { ElementDeleter } = require('./lib/map/element-deleter');
 const { ElementsToLayersBuilder } = require('./lib/map/elements-to-layers-builder');
+const { MapResizer } = require('./lib/map/map-resizer');
 const { ElementNameSuffix } = require('./lib/map/element-name-suffix');
 const { LayerComponentSplitter } = require('./lib/map/layer-component-splitter');
 const { MapDataMapper } = require('./lib/map/data-mapper');
@@ -40,6 +41,7 @@ module.exports = {
     ElementMover,
     ElementDeleter,
     ElementsToLayersBuilder,
+    MapResizer,
     ElementNameSuffix,
     LayerComponentSplitter,
     MapDataMapper,
