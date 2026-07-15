@@ -174,6 +174,56 @@ class TestElementsFromLayersLoader extends BaseMapGeneratorTest
             this.assertEqual(bounds.height, 4, 'Height spans rows 3..6');
         });
     }
+
+    async testIsSpotLayerAcceptsGeneratedSpotLayers()
+    {
+        await this.test('isSpotLayer accepts the spot layers minted by the generator', async () => {
+            let loader = new ElementsFromLayersLoader();
+            this.assert(
+                loader.isSpotLayer(ElementFixtures.buildLayer('spot_grass-s0', [0])),
+                'Plain spot instance expected to be a spot layer'
+            );
+            this.assert(
+                loader.isSpotLayer(ElementFixtures.buildLayer('spot_003_river_grass-collisions-s0', [0])),
+                'Spot base holding a collisions segment expected to be a spot layer'
+            );
+            this.assert(
+                loader.isSpotLayer(ElementFixtures.buildLayer('spot_003_river_grass-collisions-s0-spot-variations', [0])),
+                'Spot variations sub-layer expected to be a spot layer'
+            );
+        });
+    }
+
+    async testIsSpotLayerRejectsElementLayers()
+    {
+        await this.test('isSpotLayer rejects layers that parse as elements', async () => {
+            let loader = new ElementsFromLayersLoader();
+            this.assert(
+                !loader.isSpotLayer(ElementFixtures.buildLayer('tree-001-below-player', [0])),
+                'Element layer must not be read as a spot'
+            );
+            this.assert(
+                !loader.isSpotLayer(ElementFixtures.buildLayer('tree0-collisions', [0])),
+                'Element collisions layer must not be read as a spot'
+            );
+        });
+    }
+
+    async testIsSpotLayerRejectsSkippedAndNonTileLayers()
+    {
+        await this.test('isSpotLayer rejects skipped names and non tile layers', async () => {
+            let loader = new ElementsFromLayersLoader();
+            this.assert(!loader.isSpotLayer(ElementFixtures.buildLayer('ground', [0])), 'ground is skipped');
+            this.assert(!loader.isSpotLayer(ElementFixtures.buildLayer('borders', [0])), 'borders is skipped');
+            this.assert(
+                !loader.isSpotLayer(ElementFixtures.buildLayer('spot-layer-water-s0', [0])),
+                'The reserved spot-layer- prefix is skipped'
+            );
+            let objectLayer = ElementFixtures.buildLayer('spot_grass-s0', [0]);
+            objectLayer.type = 'objectgroup';
+            this.assert(!loader.isSpotLayer(objectLayer), 'Non tile layers are never spots');
+        });
+    }
 }
 
 module.exports.TestElementsFromLayersLoader = TestElementsFromLayersLoader;

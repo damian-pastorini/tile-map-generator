@@ -170,6 +170,36 @@ class TestLayerDataFactory extends BaseMapGeneratorTest
         });
     }
 
+    async testBuildDataFromTilesWritesGidsAtTilePositions()
+    {
+        await this.test('buildDataFromTiles writes each tile gid at its row and col', async () => {
+            let factory = new LayerDataFactory();
+            let data = factory.buildDataFromTiles([{col: 0, row: 0, gid: 5}, {col: 2, row: 1, gid: 9}], 4, 3);
+            this.assertEqual(data.length, 12, 'data spans the whole map');
+            this.assertEqual(data[0], 5, 'first tile written at index 0');
+            this.assertEqual(data[6], 9, 'second tile written at row 1 col 2');
+        });
+    }
+
+    async testBuildDataFromTilesLeavesEmptyCellsAtZero()
+    {
+        await this.test('buildDataFromTiles leaves every untouched cell at zero', async () => {
+            let factory = new LayerDataFactory();
+            let data = factory.buildDataFromTiles([{col: 1, row: 1, gid: 7}], 3, 3);
+            this.assertEqual(data[4], 7, 'the written tile holds its gid');
+            this.assertEqual(data[0], 0, 'untouched cells stay empty');
+            this.assertEqual(data[8], 0, 'untouched cells stay empty');
+        });
+    }
+
+    async testBuildDataFromTilesWithoutTilesReturnsEmptyData()
+    {
+        await this.test('buildDataFromTiles with no tiles returns fully empty data', async () => {
+            let factory = new LayerDataFactory();
+            this.assertDeepEqual(factory.buildDataFromTiles([], 2, 2), [0, 0, 0, 0], 'empty tiles produce empty data');
+        });
+    }
+
 }
 
 module.exports.TestLayerDataFactory = TestLayerDataFactory;
