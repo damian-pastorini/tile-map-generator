@@ -11,11 +11,14 @@ const { SpotsFromLayersLoader } = require('../lib/loader/spots-from-layers-loade
 class TestSpotsFromLayersLoader extends BaseMapGeneratorTest
 {
 
-    buildSpotMapWithVariations(baseName)
+    buildSpotMapWithVariations(baseName, variationsName)
     {
         return ElementFixtures.buildMap([
             ElementFixtures.buildLayer(baseName, ElementFixtures.gridWithTileAt(1, 1, 100)),
-            ElementFixtures.buildLayer(baseName+'-spot-variations', ElementFixtures.gridWithTileAt(2, 2, 200))
+            ElementFixtures.buildLayer(
+                variationsName ? variationsName : baseName+'-spot-variations',
+                ElementFixtures.gridWithTileAt(2, 2, 200)
+            )
         ]);
     }
 
@@ -46,6 +49,87 @@ class TestSpotsFromLayersLoader extends BaseMapGeneratorTest
             this.assertEqual(result.spots[0].layers.length, 2, 'Both segments grouped');
             this.assertEqual(result.spots[0].layers[0].type, 'spot', 'Base segment defaults to the spot type');
             this.assertEqual(result.spots[0].layers[1].type, 'spot-variations', 'Suffixed segment keeps its type');
+        });
+    }
+
+    async testFusedElementNumberVariationsGroupWithTheirBase()
+    {
+        await this.test('Variations minted with the fused element number group under the base instance', async () => {
+            let result = new SpotsFromLayersLoader().load(
+                this.buildSpotMapWithVariations('spot_001_dark_grass-s0', 'spot_001_dark_grass-s00-spot-variations')
+            );
+            this.assertEqual(result.spots.length, 1, 'Expected one spot, not one per layer');
+            this.assertEqual(result.spots[0].instanceId, 'spot_001_dark_grass-s0', 'Instance id keeps the base name');
+            this.assertEqual(result.spots[0].index, 0, 'Instance index comes from the base layer');
+            this.assertEqual(result.spots[0].layers.length, 2, 'Base and variations grouped together');
+            this.assertEqual(result.spots[0].layers[1].type, 'spot-variations', 'Suffixed segment keeps its type');
+        });
+    }
+
+    async testFusedElementNumberKeepsMultiDigitInstancesApart()
+    {
+        await this.test('Fused element numbers do not collapse multi digit instances', async () => {
+            let result = new SpotsFromLayersLoader().load(ElementFixtures.buildMap([
+                ElementFixtures.buildLayer(
+                    'spot_003_river_grass-collisions-s1',
+                    ElementFixtures.gridWithTileAt(0, 0, 100)
+                ),
+                ElementFixtures.buildLayer(
+                    'spot_003_river_grass-collisions-s10-spot-variations',
+                    ElementFixtures.gridWithTileAt(1, 1, 200)
+                )
+            ]));
+            this.assertEqual(result.spots.length, 1, 'Expected one spot');
+            this.assertEqual(result.spots[0].instanceId, 'spot_003_river_grass-collisions-s1', 'Base instance id');
+            this.assertEqual(result.spots[0].index, 1, 'Instance index comes from the base layer');
+            this.assertEqual(result.spots[0].layers.length, 2, 'Base and variations grouped together');
+        });
+    }
+
+    async testFusedVariationsPreferTheLongestBase()
+    {
+        await this.test('A fused variations layer binds to the longest matching base instance', async () => {
+            let result = new SpotsFromLayersLoader().load(ElementFixtures.buildMap([
+                ElementFixtures.buildLayer('spot_001_dark_grass-s1', ElementFixtures.gridWithTileAt(0, 0, 100)),
+                ElementFixtures.buildLayer('spot_001_dark_grass-s10', ElementFixtures.gridWithTileAt(1, 0, 101)),
+                ElementFixtures.buildLayer(
+                    'spot_001_dark_grass-s100-spot-variations',
+                    ElementFixtures.gridWithTileAt(2, 2, 200)
+                )
+            ]));
+            this.assertEqual(result.spots.length, 2, 'Expected the two base instances');
+            this.assertEqual(result.spots[0].layers.length, 1, 'The -s1 base keeps only its own layer');
+            this.assertEqual(result.spots[1].instanceId, 'spot_001_dark_grass-s10', 'Longest base wins');
+            this.assertEqual(result.spots[1].layers.length, 2, 'Variations bind to the -s10 base');
+        });
+    }
+
+    async testVariationsBeforeItsBaseStillGroups()
+    {
+        await this.test('A variations layer listed before its base still groups under the base', async () => {
+            let result = new SpotsFromLayersLoader().load(ElementFixtures.buildMap([
+                ElementFixtures.buildLayer(
+                    'spot_001_dark_grass-s00-spot-variations',
+                    ElementFixtures.gridWithTileAt(2, 2, 200)
+                ),
+                ElementFixtures.buildLayer('spot_001_dark_grass-s0', ElementFixtures.gridWithTileAt(1, 1, 100))
+            ]));
+            this.assertEqual(result.spots.length, 1, 'Expected one spot regardless of the layer order');
+            this.assertEqual(result.spots[0].instanceId, 'spot_001_dark_grass-s0', 'Instance id keeps the base name');
+            this.assertEqual(result.spots[0].index, 0, 'Index comes from the base layer, not the fused name');
+        });
+    }
+
+    async testFusedVariationsBoundsSpanBothSegments()
+    {
+        await this.test('Bounds of a fused spot span the base and the variations tiles', async () => {
+            let result = new SpotsFromLayersLoader().load(
+                this.buildSpotMapWithVariations('spot_001_dark_grass-s0', 'spot_001_dark_grass-s00-spot-variations')
+            );
+            this.assertEqual(result.spots[0].bounds.col, 1, 'Min col across segments');
+            this.assertEqual(result.spots[0].bounds.row, 1, 'Min row across segments');
+            this.assertEqual(result.spots[0].bounds.width, 2, 'Width spans cols 1..2');
+            this.assertEqual(result.spots[0].bounds.height, 2, 'Height spans rows 1..2');
         });
     }
 

@@ -79,6 +79,64 @@ class TestSpotLayerName extends BaseMapGeneratorTest
         });
     }
 
+    async testResolveBaseInstanceIdStripsTheFusedElementNumber()
+    {
+        await this.test('resolveBaseInstanceId maps a fused sub-layer instance id onto its base', async () => {
+            let variations = this.spotLayerName.parse('spot_001_dark_grass-s00-spot-variations');
+            this.assertEqual(variations.instanceId, 'spot_001_dark_grass-s00');
+            this.assertEqual(
+                this.spotLayerName.resolveBaseInstanceId(variations.instanceId, ['spot_001_dark_grass-s0']),
+                'spot_001_dark_grass-s0'
+            );
+        });
+    }
+
+    async testResolveBaseInstanceIdKeepsAnExactBase()
+    {
+        await this.test('resolveBaseInstanceId returns an instance id that is already a base', async () => {
+            this.assertEqual(
+                this.spotLayerName.resolveBaseInstanceId('spot_001_dark_grass-s0', ['spot_001_dark_grass-s0']),
+                'spot_001_dark_grass-s0'
+            );
+        });
+    }
+
+    async testResolveBaseInstanceIdPrefersTheLongestBase()
+    {
+        await this.test('resolveBaseInstanceId prefers the longest matching base instance', async () => {
+            this.assertEqual(
+                this.spotLayerName.resolveBaseInstanceId(
+                    'spot_001_dark_grass-s100',
+                    ['spot_001_dark_grass-s1', 'spot_001_dark_grass-s10']
+                ),
+                'spot_001_dark_grass-s10'
+            );
+        });
+    }
+
+    async testResolveBaseInstanceIdKeepsUnmatchedIds()
+    {
+        await this.test('resolveBaseInstanceId keeps the id when no base matches', async () => {
+            this.assertEqual(
+                this.spotLayerName.resolveBaseInstanceId('spot_001_dark_grass-s00', ['other_spot-s0']),
+                'spot_001_dark_grass-s00'
+            );
+            this.assertEqual(this.spotLayerName.resolveBaseInstanceId('spot_001_dark_grass-s00', []),
+                'spot_001_dark_grass-s00'
+            );
+        });
+    }
+
+    async testResolveBaseInstanceIdIgnoresNonDigitRemainders()
+    {
+        await this.test('resolveBaseInstanceId ignores a base whose remainder is not a number', async () => {
+            this.assertEqual(
+                this.spotLayerName.resolveBaseInstanceId('spot_001_dark_grass-s0', ['spot_001_dark_grass']),
+                'spot_001_dark_grass-s0'
+            );
+        });
+    }
+
     async testGroupKeyDropsTheInstanceSegment()
     {
         await this.test('groupKey drops the instance segment so every instance shares one key', async () => {
