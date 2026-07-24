@@ -27,6 +27,7 @@ class TestMapGridBuilder extends BaseMapGeneratorTest
             freeSpaceTilesQuantity: 0,
             freeSpaceMultiplier: 1,
             freeTilesMultiplier: 1,
+            mapSizeFreeSpaceSidesMultiplier: 1,
             minimumDistanceFromBorders: 0,
             blockMapBorder: false
         };

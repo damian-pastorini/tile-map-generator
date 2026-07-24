@@ -22,8 +22,11 @@ class TestEdgeCases extends BaseFunctionalityTest
         await this.testWithDeterministicSeed('Minimum map size handling', config, 10001, async (map, config) => {
             this.assert(map, 'Map must be generated for minimum size');
             this.assertEqual(map.width, 3, 'Map width must match minimum');
-            this.assertEqual(map.height, 3, 'Map height must match minimum');
+            this.assert(3 <= map.height, 'Map height must be at least the minimum, auto grow may extend it');
             this.assert(0 < map.layers.length, 'Minimum map must have layers');
+            for(let layer of map.layers){
+                this.assertEqual(layer.data.length, map.width * map.height, 'Layer data must match the final map size');
+            }
         });
     }
 
@@ -127,7 +130,7 @@ class TestEdgeCases extends BaseFunctionalityTest
         await this.testWithDeterministicSeed('Extreme map aspect ratio', config, 10009, async (map, config) => {
             this.assert(map, 'Map must handle extreme aspect ratios');
             this.assertEqual(map.width, 100, 'Wide map width must be preserved');
-            this.assertEqual(map.height, 5, 'Narrow map height must be preserved');
+            this.assert(5 <= map.height, 'Narrow map height must be at least the configured value, auto grow may extend it');
         });
     }
 

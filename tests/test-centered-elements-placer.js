@@ -47,7 +47,10 @@ class TestCenteredElementsPlacer extends BaseMapGeneratorTest
             elementsPlacer: {
                 placeElementOnMap: (elementKey, index, position) => placeCalls.push({elementKey, index, position}),
                 determineElementFreeSpaceAround: () => 0,
-                calculateMinimumFreeSpace: () => 0
+                calculateMinimumFreeSpace: () => 0,
+                feasibility: {
+                    buildValidator: () => null
+                }
             },
             debugHelper: {
                 debugAdjacentSpots: async () => {

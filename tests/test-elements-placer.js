@@ -7,6 +7,7 @@
 const { BaseMapGeneratorTest } = require('./base-map-generator-test');
 const { ElementsPlacer } = require('../lib/generator/elements-placer');
 const { MapLayersComposer } = require('../lib/generator/map-layers-composer');
+const { ElementLayerName } = require('../lib/map/element-layer-name');
 
 class TestElementsPlacer extends BaseMapGeneratorTest
 {
@@ -164,7 +165,9 @@ class TestElementsPlacer extends BaseMapGeneratorTest
             generatedFloorData: {},
             additionalLayers: [],
             layerElements: layerElements,
-            elementLayerWriter: this.recordingWriter(writerCalls)
+            elementLayerWriter: this.recordingWriter(writerCalls),
+            elementLayerName: new ElementLayerName(),
+            placedElementsJournal: []
         });
     }
 

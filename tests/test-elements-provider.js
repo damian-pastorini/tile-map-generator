@@ -62,6 +62,52 @@ class TestElementsProvider extends BaseMapGeneratorTest
         });
     }
 
+    buildPerInstanceLayersFixture()
+    {
+        return [
+            {name: 'house-clean-001-collisions', data: [1, 0], properties: [
+                {name: 'quantity', value: 1},
+                {name: 'mapCentered', value: 1}
+            ]},
+            {name: 'house-clean-001-over-player', data: [2, 0]},
+            {name: 'house-clean-002-collisions', data: [3, 0], properties: [
+                {name: 'quantity', value: 1},
+                {name: 'mapCentered', value: 2}
+            ]},
+            {name: 'barrel-on-fire-001-collisions', data: [4, 0]},
+            {name: 'window-wooden-003-collisions', data: [5, 0]},
+            {name: 'tent-001-collisions', data: [6, 0]},
+            {name: 'tree-001-below-player', data: [7, 0]},
+            {name: 'stairs-up-collisions', data: [8, 0]},
+            {name: 'stairs-down-background-collisions', data: [9, 0]}
+        ];
+    }
+
+    async testSplitByLayerNameKeepsMultiSegmentInstanceGroups()
+    {
+        await this.test('splitByLayerName keeps multi-segment element instances in separate groups', async () => {
+            let provider = new ElementsProvider({tileMapJSON: {layers: this.buildPerInstanceLayersFixture()}});
+            let groups = provider.splitByLayerName();
+            this.assert(groups['house-clean-001'], 'house-clean-001 group exists');
+            this.assert(groups['house-clean-002'], 'house-clean-002 group exists');
+            this.assertEqual(groups['house-clean-001'].length, 2, 'two layers grouped under house-clean-001');
+            this.assertEqual(groups['house-clean-002'].length, 1, 'one layer grouped under house-clean-002');
+            this.assert(!groups['house-clean'], 'no collapsed house-clean group');
+            this.assertEqual(provider.elementsQuantity['house-clean-001'], 1, 'quantity kept per instance');
+            this.assertEqual(provider.elementsQuantity['house-clean-002'], 1, 'quantity not overwritten');
+            this.assertEqual(provider.mapCenteredElements['house-clean-001'], 1, 'mapCentered kept per instance');
+            this.assertEqual(provider.mapCenteredElements['house-clean-002'], 2, 'mapCentered not overwritten');
+            this.assert(groups['barrel-on-fire-001'], 'barrel-on-fire-001 group exists');
+            this.assert(!groups['barrel-on'], 'no truncated barrel-on group');
+            this.assert(groups['window-wooden-003'], 'window-wooden-003 group exists');
+            this.assert(groups['tent-001'], 'single segment tent-001 group unchanged');
+            this.assert(groups['tree-001'], 'single segment tree-001 group unchanged');
+            this.assert(groups['stairs-up'], 'stairs-up keeps the hardcoded stairs group key');
+            this.assert(groups['stairs-down'], 'stairs-down background collisions grouped under stairs-down');
+            this.assert(!groups['stairs-down-background'], 'no stairs-down-background split group');
+        });
+    }
+
     async testFindMinimumBoundingBox()
     {
         await this.test('findMinimumBoundingBox computes bounds from non-zero tiles', async () => {

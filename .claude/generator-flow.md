@@ -353,11 +353,21 @@ After the loop: `this.surroundingTiles = this.propertiesMapper.surroundingTiles`
 
 ### `ElementsProvider.splitByLayerName()` — `elements-provider.js:121`
 
-Iterates composite layers. Each layer name must have at least 3 parts separated by `-` (format: `{name}-{index}-{layerType}`). Groups layers into `elementsLayers['{name}-{index}']`. Special handling:
+Iterates composite layers. Each layer name must have at least 3 parts separated by `-` (format: `{name}-{index}-{layerType}`). This is the step that cuts the composite canvas back into individual elements: every layer is assigned to a GROUP, and each group later becomes exactly ONE placeable element.
+
+Group key resolution, `fetchElementLayerGroup(layerName, splitLayerName)` (`elements-provider.js:175`):
+
+1. Names starting with `stairs-up-` or `stairs-down-` are pinned to the group keys `stairs-up` / `stairs-down` (these exact keys are hardcoded in `prePlaceStairs` and the associated maps floor logic).
+2. Otherwise the key is `ElementLayerName.parse(layerName).instanceId`: the known layer-type suffix (`collisions-over-player`, `collisions`, `over-player`, `below-player`, `path`, `base`) is stripped and the remainder is `{elementName}-{index}`, so multi-segment names work (`house-clean-005-collisions` -> `house-clean-005`).
+3. When the name does not end in a known layer type, fallback to `MapNaming.fuseGroupName` (first two name parts joined, e.g. `house-01-shadow` -> `house-01`).
+
+All layers sharing a group key travel together from here on: `splitElements()` clones the map per group, keeps only that group's layers, crops them to the union bounding box of their tiles (`cropMapToMinimumArea`) and stores the result in `croppedElements[groupKey]`. That cropped stamp IS the element the placer will position: whatever the group contains is placed as one unit.
+
+Special handling:
 
 - `ground-variations` → populates `this.randomGroundTiles[]` from non-zero tile IDs in layer
 - `spot-layer-{tilesKey}-ground-variations` → populates `this.elementsVariations[tilesKey][]`
-- Reads layer `properties`: `quantity`, `freeSpaceAround`, `allowPathsInFreeSpace`, `mapCentered`
+- Reads layer `properties` per group: `quantity`, `freeSpaceAround`, `allowPathsInFreeSpace`, `mapCentered` (each read assigns the group entry, so the value on the group's property-carrying layer wins)
 
 ### `MapDataMapper.fromProvider()` — `data-mapper.js:13`
 
@@ -582,6 +592,39 @@ createTiledMapObject(layers)
 // saves to generated/{mapName}.json
 FileHandler.writeFile(...)
 ```
+
+---
+
+## Stage 3c2: Element Placement and Order
+
+`ElementsPlacer.placeElements()` - `lib/generator/elements-placer.js`
+
+1. `generateAdditionalLayers()` creates one empty map-sized layer per distinct element source layer name.
+2. `prePlaceStairs()` places stairs-up/stairs-down at fixed positions from `previousFloorData` (associated floors) and removes them from `elementsQuantity`.
+3. `feasibility.buildPending()` (`lib/generator/placement-feasibility.js`) builds the pending footprints queue: one entry per element instance, sized `width/height + freeSpaceAround * 2`. Spots registered as elements are included because they live in `elementsQuantity`.
+4. `CenteredElementsPlacer.placeCenteredElements()` runs FIRST: elements with a non-zero `mapCentered` order are sorted ascending (stable sort, ties keep file order) and placed deterministically - order 1 at the exact map center, the rest in offset rings around it (`placementOffsets`, ring distance grows per failed round). Their quantities are zeroed so the main loop skips them.
+5. Main loop: iterates `elementsQuantity` key order, or by descending area when `orderElementsBySize` is true. Position search per instance: `PositionFinder.findPosition` - `inOrder` scans top-left to bottom-right, `random` tries random positions.
+
+### Strict feasibility safeguard
+
+Every candidate position must keep ALL still-pending elements placeable. `PlacementFeasibility.buildValidator()`:
+
+- Returns `null` when nothing is pending (no constraint, behavior identical to a build without the safeguard).
+- Returns `false` (global fail) when some pending footprint has no free window on the CURRENT grid - no candidate can fix that, so the position search is skipped entirely and the resolver runs.
+- Otherwise returns a validator called per candidate: a cheap free-area pre-check first, then, using a blocked-cells integral table built once per placement (`GeometryCalculator.buildBlockedIntegral` / `hasFreeWindow`), every distinct pending footprint (largest area first) must still have a free window that does not overlap the candidate rect.
+
+The validator threads through `PositionFinder.canPlaceElement` and `CenteredElementsPlacer.canPlaceElementCentered`. It never changes ordering, only candidate validity.
+
+### placeRejectResolver
+
+When no candidate passes (or on global fail) the element is NEVER silently dropped: `PlacementRejectResolver.resolve()` (`lib/generator/placement-reject-resolver.js`) runs, controlled by the `placeRejectResolver` option (`moveElements` | `autoGrow`, default `autoGrow`, exposed in the Maps Wizard as "Elements place rejection resolve method").
+
+Contract: `resolve(elementType, elementNumber)` PLACES the rejected element itself (through the normal `placeElementOnMap` path, so the journal and pending queue stay in sync) and returns a boolean; the caller must NOT place again on success. A re-entrant resolve call (a placement triggered while already resolving) goes straight to `autoGrow` so resolution always terminates.
+
+- `moveElements`: removes the most recent movable placed element (journal tracked; elements with change-points or return-point layers and stairs are never moved), clears its tiles from its per-instance layers, requeues it, rebuilds the map grid from the journal (`MapGridBuilder.rebuildGridFromJournal`, replaying free-space marking through `ElementLayerWriter.markFreeSpaceAroundElementAsNotAvailable`), then retries the rejected element. Removed elements are re-placed by `processRequeuedPending()` at the end of `placeElements()`. Falls back to `autoGrow` when moving cannot open a window.
+- `autoGrow`: grows the map BOTTOM only (bottom growth appends flat indexes, so every stored main path index and change/return point record stays valid; growing right would change the row stride and corrupt them), by the rejected footprint height plus free space, border and minimum distance. The grid, ground layer, path layer, all element layers and the border are grown or redrawn consistently (`MapBorderGenerator.redrawBorderForGrownMap`). Limitation: an `entryPosition` is not repositioned on growth - maps with entry positions should set an explicit `mapSize` (a critical log reports this case).
+
+Every successful placement is recorded in `generator.placedElementsJournal` as {elementType, elementNumber, position, width, height, freeSpaceAround, allowPathsInFreeSpace, movable, layerNames}.
 
 ---
 

@@ -72,6 +72,12 @@ Sub-classes do NOT receive the whole generator. Each class receives ONLY the spe
 **ElementsPlacer** / **CenteredElementsPlacer** / **ElementLayerWriter** (`lib/generator/`):
 - Place elements (with free-space rules), place map-centered elements, and write per-instance element layers
 
+**PlacementFeasibility** (`lib/generator/placement-feasibility.js`):
+- Owns the pending element footprints queue and builds the strict per-candidate placement validator (free-area pre-check plus per-footprint free-window checks over the blocked-cells integral)
+
+**PlacementRejectResolver** (`lib/generator/placement-reject-resolver.js`):
+- Resolves rejected placements per the `placeRejectResolver` option (`moveElements` | `autoGrow`, default `autoGrow`): relocates journaled movable elements or grows the map bottom, so elements are never silently dropped (see `.claude/generator-flow.md` Stage 3c2)
+
 **MapBorderGenerator** (`lib/generator/map-border-generator.js`):
 - Builds the collision map border and entry positions
 
