@@ -1,0 +1,29 @@
+{
+    "factor": 2,
+    "mainPathSize": 3,
+    "blockMapBorder": true,
+    "freeSpaceTilesQuantity": 2,
+    "minimumElementsFreeSpaceAround": 1,
+    "freeTilesMultiplier": 2,
+    "variableTilesPercentage": 15,
+    "collisionLayersForPaths": ["change-points", "collisions", "tree-base"],
+    "mapsInformation": [
+        {"mapName": "town-001", "mapTitle": "Town 1"},
+        {"mapName": "town-002", "mapTitle": "Town 2"},
+        {"mapName": "town-003", "mapTitle": "Town 3"},
+        {"mapName": "town-004", "mapTitle": "Town 4"}
+    ],
+    "associationsProperties": {
+        "generateElementsPath": false,
+        "blockMapBorder": true,
+        "freeSpaceTilesQuantity": 1,
+        "minimumElementsFreeSpaceAround": 0,
+        "minimumDistanceFromBorders": 0,
+        "variableTilesPercentage": 0,
+        "placeElementsOrder": "inOrder",
+        "orderElementsBySize": false,
+        "randomizeQuantities": true,
+        "applySurroundingPathTiles": false
+    },
+    "compositeElementsFile": "reldens-town-composite-with-associations.json"
+}
