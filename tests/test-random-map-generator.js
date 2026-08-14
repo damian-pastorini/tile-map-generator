@@ -24,6 +24,8 @@ class TestRandomMapGenerator extends BaseMapGeneratorTest
             this.assertEqual(generator.tileCount, 306, 'tileCount must be read from options');
             this.assertEqual(generator.mapName, 'my-map', 'mapName must be stripped of the json extension');
             this.assertEqual(generator.mapFileName, 'my-map.json', 'mapFileName must keep the json extension');
+            this.assertEqual(generator.mapType, 'map', 'mapType must default to map');
+            this.assertEqual(generator.mapVersion, '1.10', 'mapVersion must default to the Tiled JSON format version');
             this.assertEqual(generator.pathTile, 121, 'pathTile must be read from options');
             this.assertEqual(generator.groundTile, 116, 'groundTile must be read from options');
             this.assertEqual(generator.surroundingTiles['-1,-1'], 127, 'surroundingTiles must be assigned');
@@ -101,6 +103,7 @@ class TestRandomMapGenerator extends BaseMapGeneratorTest
             ];
             let map = generator.createTiledMapObject(layers);
             this.assertEqual(map.type, 'map', 'type must be map');
+            this.assertEqual(map.version, '1.10', 'version must declare the Tiled JSON format version');
             this.assertEqual(map.orientation, 'orthogonal', 'orientation must be orthogonal');
             this.assertEqual(map.width, 4, 'width must default to the generator mapWidth');
             this.assertEqual(map.height, 3, 'height must default to the generator mapHeight');
@@ -110,6 +113,21 @@ class TestRandomMapGenerator extends BaseMapGeneratorTest
             this.assertEqual(map.tilesets.length, 1, 'a single tileset must be produced');
             this.assertEqual(map.tilesets[0].columns, 18, 'tileset columns must match the config');
             this.assertEqual(map.properties[0].name, 'mapTitle', 'map custom properties must be attached');
+        });
+    }
+
+    async testCreateTiledMapObjectHonorsTypeAndVersionOptions()
+    {
+        await this.test('createTiledMapObject uses the mapType and mapVersion passed in the options', async () => {
+            let config = this.setupMinimalConfig();
+            config.mapType = 'custom-map';
+            config.mapVersion = '1.11';
+            let generator = new RandomMapGenerator(config);
+            this.assertEqual(generator.mapType, 'custom-map', 'mapType must be read from options');
+            this.assertEqual(generator.mapVersion, '1.11', 'mapVersion must be read from options');
+            let map = generator.createTiledMapObject([]);
+            this.assertEqual(map.type, 'custom-map', 'map type must reflect the mapType option');
+            this.assertEqual(map.version, '1.11', 'map version must reflect the mapVersion option');
         });
     }
 
