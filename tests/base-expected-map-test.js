@@ -37,15 +37,33 @@ class BaseExpectedMapTest extends BaseFunctionalityTest
         }
     }
 
-    loadOrCreateExpectedMap(expectedFileName, generatedMap)
+    loadOrCreateExpectedFile(expectedFileName, generatedData, buildFileContents)
     {
         let expectedPath = FileHandler.joinPaths(this.testDataFolder, expectedFileName);
         let existing = FileHandler.fetchFileJson(expectedPath);
         if(existing){
             return existing;
         }
-        FileHandler.writeFile(expectedPath, JsonFormatter.mapToJSON(generatedMap));
-        return sc.deepJsonClone(generatedMap);
+        FileHandler.writeFile(expectedPath, buildFileContents(generatedData));
+        return sc.deepJsonClone(generatedData);
+    }
+
+    loadOrCreateExpectedMap(expectedFileName, generatedMap)
+    {
+        return this.loadOrCreateExpectedFile(
+            expectedFileName,
+            generatedMap,
+            (mapData) => JsonFormatter.mapToJSON(mapData)
+        );
+    }
+
+    loadOrCreateExpectedTerrains(expectedFileName, generatedTerrains)
+    {
+        return this.loadOrCreateExpectedFile(
+            expectedFileName,
+            generatedTerrains,
+            (terrainsData) => sc.toJsonString(terrainsData)
+        );
     }
 
     async runExpectedMapScenario(config, seed, expectedFileName)

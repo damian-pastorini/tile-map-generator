@@ -998,6 +998,32 @@ if(
 
 The wangset fallback fires if EITHER `surroundingTilesPosition` OR `cornersPosition` is empty. Both must be non-empty for the PropertiesMapper path to be used. When the wangset fallback fires and no wangset named `spot_001` exists in the tileset, `surroundingTilesPosition` and `cornersPosition` both come back empty, `sMC` is undefined, and the spot tile cannot be resolved.
 
+### Spots As Terrain Sets In The Generated Map
+
+The generated map tileset can carry the placed spots as Tiled terrain sets, so every spot can be painted as a terrain when the map is edited. It is controlled by `includeSpotsAsTerrains` (`random-map-generator.js` `assignRemainingOptions`, default `true`, exposed in the Reldens maps wizard common options).
+
+Flow:
+
+1. `spot-generator.js` `appendSpotTerrains()` runs once per spot key, after the spot instances were created, and only when the spot produced layers (`groundSpotConfig.spotLayers` non-empty), so a spot with `quantity: 0` or one that failed placement never becomes a terrain.
+2. The terrain positions come from `buildSpotTerrainPositions()`: the `surroundingTilesPosition` and `cornersPosition` already resolved in `TilesShortcuts.originalMappedData` (from the PropertiesMapper or from the wangset fallback), plus the resolved `spotTile` as `middle-center` when the mapped data has none, which is the case for a spot filled with a single tile.
+3. When the spot config has `borderInnerWalls` or `borderOuterWalls`, the same is stored for `tilesKey+'-inner-walls'` and `tilesKey+'-outer-walls'` using their own `mapTilesShortcuts()` resolution.
+4. `generateSpots()` returns the collected `spotsTerrains`, assigned onto the generator with the rest of the spots result.
+5. `createTiledTilesetObject()` calls `SpotTerrainsBuilder.build(spotsTerrains, tileset.tilecount, tileset.firstgid)` and attaches the result as `tilesets[0].wangsets`.
+
+`SpotTerrainsBuilder` (`lib/map/spot-terrains-builder.js`) writes what `WangsetMapper` reads, using the same position/wangid table (`lib/map/wangset-positions.js`): each terrain becomes `{name, type: 'mixed', tile, colors: [one color named after the terrain], wangtiles: [{tileid, wangid}]}`, where `tileid = gid - firstgid`. Tiles outside the map tileset (`tileid` negative or beyond `tilecount`) are dropped and a terrain left without tiles is not written, so a terrain never points at tiles the map does not have. Duplicated tile ids inside one terrain are kept once.
+
+The optimizer already preserves and remaps terrain sets (`tile-map-optimizer` `createNewJSON()`), so an optimized map keeps them with corrected tile ids.
+
+**Terrains validation and coverage**
+
+`TerrainsValidator` (`lib/validator/terrains-validator.js`) verifies the terrains of a generated map, tile by tile, reusing `WangsetMapper` to read back the emitted wangtiles as positions:
+
+- `validateTerrainsMatchResolvedTiles(map, spotsTerrains)` - every emitted terrain tile must be the tile resolved for that position when the spot was generated, and every emitted terrain must belong to a generated spot.
+- `validateTerrainsMatchSourceTerrains(map, optimizedMapFirstTileset)` - the emitted terrains must match the source composite terrains the tiles were taken from, after the optimizer remapped the tile ids.
+- `validateTerrainsTilesArePresentInMap(map)` - every terrain must have a representative tile and at least one of its tiles painted in the generated map layers.
+
+Covered by `tests/test-dungeon-generation-expected-maps.js` (the real dungeon composite: `cave`, `cave-inner-walls` and `cave-outer-walls` against the committed `tests/test-data/dungeon-walls-terrains-expected.json` golden file), `tests/functionality/test-spots-generation.js` (single tile spots, terrains disabled) and the unit tests in `tests/test-spot-terrains-builder.js` and `tests/test-spot-generator.js`.
+
 ### Synthetic Corner Annotations in `composite-tile-annotation-builder.js`
 
 **Method: `addSpotAnnotations()` / `addSyntheticCornerAnnotations()`**
