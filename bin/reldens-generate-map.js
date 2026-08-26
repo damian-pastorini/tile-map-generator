@@ -28,6 +28,7 @@ class ReldensGenerateMap
         Logger.activeLogLevels = [this.outputLogLevel];
         Logger.setLogLevel(this.outputLogLevel);
         Logger.addTimeStamp = false;
+        Logger.context().RELDENS_ENABLE_TRACE_FOR = 'none';
     }
 
     async execute()
