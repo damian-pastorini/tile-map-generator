@@ -15,6 +15,7 @@
 const { BaseExpectedMapTest } = require('./base-expected-map-test');
 const { MultipleByLoaderGenerator } = require('../lib/generator/multiple-by-loader-generator');
 const { TerrainsValidator } = require('../lib/validator/terrains-validator');
+const { WallsValidator } = require('../lib/validator/walls-validator');
 const { TileCountingUtility } = require('../lib/map/tile-counting-utility');
 const { FileHandler } = require('@reldens/server-utils');
 const { Logger, sc } = require('@reldens/utils');
@@ -26,6 +27,7 @@ class TestDungeonGenerationExpectedMaps extends BaseExpectedMapTest
     {
         super();
         this.terrainsValidator = new TerrainsValidator();
+        this.wallsValidator = new WallsValidator();
         this.dungeonGeneration = false;
     }
 
@@ -83,11 +85,73 @@ class TestDungeonGenerationExpectedMaps extends BaseExpectedMapTest
             let outerWallsLayer = map.layers.find(layer => -1 !== layer.name.indexOf('outer-walls'));
             this.assert(innerWallsLayer, 'The dungeon must contain an inner walls layer');
             this.assert(outerWallsLayer, 'The dungeon must contain an outer walls layer');
+            this.assert(
+                0 < TileCountingUtility.countNonZeroTiles(innerWallsLayer.data),
+                'The dungeon inner walls layer must contain wall tiles'
+            );
+            this.assert(
+                0 < TileCountingUtility.countNonZeroTiles(outerWallsLayer.data),
+                'The dungeon outer walls layer must contain wall tiles'
+            );
             Logger.log(100, '', 'Dungeon walls counts: '
                 +TileCountingUtility.countNonZeroTiles(innerWallsLayer.data)
                 +'/'
                 +TileCountingUtility.countNonZeroTiles(outerWallsLayer.data));
             this.assertSpotVariationsRenderBelowWalls(map);
+        });
+    }
+
+    async testDungeonWallsPassEveryWallValidationOnTheRealMap()
+    {
+        await this.test('the real dungeon map passes every wall validation using its own terrains', async () => {
+            let map = (await this.fetchDungeonGeneration()).map;
+            let innerPlacement = this.wallsValidator.validateInnerWallPlacement(map, {});
+            this.logFunctionalityResult('Dungeon Inner Walls Placement', innerPlacement);
+            this.assert(
+                innerPlacement.isValid,
+                'Every inner walls pair below a top border tile must match the cave inner walls terrain - '
+                +sc.toJsonString(innerPlacement.violations)
+            );
+            this.assert(
+                0 < innerPlacement.checkedBorders,
+                'The inner walls placement must actually check border positions, it checked '
+                +innerPlacement.checkedBorders
+            );
+            this.assertEqual(
+                innerPlacement.correctInnerWalls,
+                innerPlacement.checkedBorders,
+                'Every checked border position must carry the expected inner walls pair'
+            );
+            let outerPlacement = this.wallsValidator.validateOuterWallPlacement(map, {});
+            this.logFunctionalityResult('Dungeon Outer Walls Placement', outerPlacement);
+            this.assert(
+                outerPlacement.isValid,
+                'Every outer wall tile must touch the spot borders - '+sc.toJsonString(outerPlacement.violations)
+            );
+            this.assert(
+                0 < outerPlacement.checkedOuterWalls,
+                'The outer walls placement must actually check outer wall tiles, it checked '
+                +outerPlacement.checkedOuterWalls
+            );
+            let tileTypes = this.wallsValidator.validateWallTileTypes(map, {});
+            this.logFunctionalityResult('Dungeon Wall Tile Types', tileTypes);
+            this.assert(
+                tileTypes.isValid,
+                'Every wall layer tile must belong to its own walls terrain - '+sc.toJsonString(tileTypes.violations)
+            );
+            this.assert(0 < tileTypes.correctTileTypes, 'The wall tile types must actually be checked');
+            let cornersPlacement = this.wallsValidator.wallCornersValidator.validateCornerTilePlacement(map, {});
+            this.logFunctionalityResult('Dungeon Corner Tile Placement', cornersPlacement);
+            this.assert(
+                cornersPlacement.isValid,
+                'Every corner tile found in the inner walls layer must be a configured corner - '
+                +sc.toJsonString(cornersPlacement.violations)
+            );
+            this.assert(
+                0 < cornersPlacement.correctCorners,
+                'The corner validation must actually find corner tiles in the inner walls layers, it found '
+                +cornersPlacement.correctCorners
+            );
         });
     }
 

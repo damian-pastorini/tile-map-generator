@@ -53,9 +53,26 @@ let mapData = {
     }
 };
 
-let execute = async () => {
-    let generator = new RandomMapGenerator(mapData);
-    await generator.generate();
-};
+class Generate
+{
 
-execute();
+    constructor()
+    {
+        this.generators = {};
+    }
+
+    async execute()
+    {
+        let generator = new RandomMapGenerator(mapData);
+        this.generators[generator.mapName] = generator;
+        await generator.generate();
+        return this.generators;
+    }
+
+}
+
+if(require.main === module){
+    (new Generate()).execute();
+}
+
+module.exports.Generate = Generate;
