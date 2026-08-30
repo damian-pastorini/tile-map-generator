@@ -91,14 +91,22 @@ class TestLayerElementsObjectLoader extends BaseMapGeneratorTest
         });
     }
 
-    async testLoadLayerElementsSkipsInvalidFiles()
+    async testLoadLayerElementsFailsOnInvalidFiles()
     {
-        await this.test('loadLayerElements skips files whose layers cannot be read', async () => {
+        await this.test('loadLayerElements fails when a file cannot be read', async () => {
             let loader = new LayerElementsObjectLoader({rootFolder: this.testDataFolder});
             loader.mapData = {layerElementsFiles: {tree: 'tree.json', missing: 'non-existent-element.json'}};
+            this.assertEqual(false, loader.loadLayerElements(), 'A missing element file must fail the load');
+        });
+    }
+
+    async testLoadLayerElementsLoadsEveryValidFile()
+    {
+        await this.test('loadLayerElements returns every element when all files are readable', async () => {
+            let loader = new LayerElementsObjectLoader({rootFolder: this.testDataFolder});
+            loader.mapData = {layerElementsFiles: {tree: 'tree.json'}};
             let result = loader.loadLayerElements();
             this.assert(result.tree, 'Expected valid tree entry present');
-            this.assert(!result.missing, 'Expected missing file to be skipped');
         });
     }
 

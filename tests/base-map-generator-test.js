@@ -168,6 +168,23 @@ class BaseMapGeneratorTest
         Math.random = this.originalMathRandom;
     }
 
+    setupWallsCompositeConfig(mapName, overrides)
+    {
+        let config = {
+            tileMapJSON: FileHandler.fetchFileJson(
+                FileHandler.joinPaths(this.testDataFolder, 'house-composite.json')
+            ),
+            rootFolder: this.testDataFolder,
+            factor: 1,
+            mapName,
+            mapFileName: mapName+'.json',
+            mapSize: {mapWidth: 20, mapHeight: 20},
+            blockMapBorder: true,
+            applyMapBorderInnerWalls: true
+        };
+        return Object.assign(config, overrides);
+    }
+
     setupBasicConfig()
     {
         let house1Path = FileHandler.joinPaths(this.testDataFolder, 'house-001.json');

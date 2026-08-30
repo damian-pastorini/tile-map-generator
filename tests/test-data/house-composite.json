@@ -2351,7 +2351,7 @@
                          "type":"string",
                          "value":"border-top-left"
                         }]
-                }, 
+                },
                 {
                  "id":1163,
                  "properties":[
@@ -2370,9 +2370,29 @@
                          "value":"border-top"
                         }]
                 }],
+         "wangsets":[
+                {
+                 "colors":[
+                        {
+                         "color":"#ff0000",
+                         "name":"map-border-inner-walls",
+                         "probability":1,
+                         "tile":67
+                        }],
+                 "name":"map-border-inner-walls",
+                 "tile":67,
+                 "type":"mixed",
+                 "wangtiles":[
+                        {"tileid":66, "wangid":[0,0,0,0,0,1,0,1]},
+                        {"tileid":67, "wangid":[0,1,0,1,0,1,0,1]},
+                        {"tileid":68, "wangid":[0,1,0,1,0,0,0,0]},
+                        {"tileid":114, "wangid":[0,0,0,1,0,1,0,1]},
+                        {"tileid":115, "wangid":[0,0,0,1,0,1,0,0]},
+                        {"tileid":116, "wangid":[0,1,0,1,0,1,0,0]}]
+                }],
          "tilewidth":16,
          "transparentcolor":"#ffffff"
-        }, 
+        },
         {
          "columns":52,
          "firstgid":1681,

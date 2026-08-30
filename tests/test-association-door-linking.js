@@ -68,7 +68,7 @@ class TestAssociationDoorLinking extends BaseMapGeneratorTest
 
     async testUnmatchedChangePointReturnsFalse()
     {
-        await this.test('A change-point whose layer is absent returns false (control for the lookup)', async () => {
+        await this.test('A change-point whose layer is absent is skipped, it does not abort', async () => {
             let associatedMaps = new AssociatedMaps();
             let mainMapGenerator = this.buildMainMapGeneratorStub();
             mainMapGenerator.generatedChangePoints['town-001-house-01-n0'].targetLayerName = 'does-not-exist';
@@ -79,7 +79,12 @@ class TestAssociationDoorLinking extends BaseMapGeneratorTest
                 {generateElementsPath: false},
                 mainMapGenerator
             );
-            this.assertEqual(false, result, 'When no layer matches the recorded name, generate returns false');
+            this.assert(result, 'When no layer matches the recorded name, generate must not abort');
+            this.assertEqual(
+                0,
+                Object.keys(result).length,
+                'The unmatched change point must not produce any associated sub map'
+            );
         });
     }
 
