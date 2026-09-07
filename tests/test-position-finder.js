@@ -35,6 +35,26 @@ class TestPositionFinder extends BaseMapGeneratorTest
         });
     }
 
+    async testRandomOrderFallsBackToTheExhaustiveScan()
+    {
+        await this.test('random order proves the map is full with a scan before reporting no position', async () => {
+            let finder = new PositionFinder(this.buildGeneratorStub({placeElementsOrder: 'random'}));
+            finder.findRandomPosition = () => null;
+            let mapGrid = Array.from({length: 4}, () => Array(4).fill(false));
+            mapGrid[2][3] = true;
+            let position = finder.findPosition(1, 1, 4, 4, mapGrid);
+            this.assert(position, 'the scan must find the only free cell the 200 random draws missed');
+            this.assertEqual(position.x, 3, 'the found column is the free cell column');
+            this.assertEqual(position.y, 2, 'the found row is the free cell row');
+        });
+        await this.test('random order still reports no position when the map is genuinely full', async () => {
+            let finder = new PositionFinder(this.buildGeneratorStub({placeElementsOrder: 'random'}));
+            finder.findRandomPosition = () => null;
+            let mapGrid = Array.from({length: 4}, () => Array(4).fill(false));
+            this.assertEqual(finder.findPosition(1, 1, 4, 4, mapGrid), null, 'a full map must still report null');
+        });
+    }
+
     async testCanPlaceElementWalkable()
     {
         await this.test('canPlaceElement true on fully walkable footprint', async () => {

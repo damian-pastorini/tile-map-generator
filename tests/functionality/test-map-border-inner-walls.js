@@ -134,6 +134,48 @@ class TestMapBorderInnerWalls extends BaseFunctionalityTest
         });
     }
 
+    appendBottomWallsWangtiles(tileMapJSON)
+    {
+        let wangset = tileMapJSON.tilesets[0].wangsets.find(entry => 'map-border-inner-walls' === entry.name);
+        this.assert(wangset, 'The composite must carry the map border inner walls wangset');
+        wangset.wangtiles.push({tileid: 162, wangid: [0, 0, 0, 0, 0, 0, 0, 1]});
+        wangset.wangtiles.push({tileid: 163, wangid: [0, 1, 0, 0, 0, 0, 0, 1]});
+        wangset.wangtiles.push({tileid: 164, wangid: [0, 1, 0, 0, 0, 0, 0, 0]});
+        return tileMapJSON;
+    }
+
+    async testWallsUseThreeRowsWhenTheBottomTilesResolve()
+    {
+        let config = this.setupWallsCompositeConfig('map-border-inner-walls-three-rows');
+        this.appendBottomWallsWangtiles(config.tileMapJSON);
+        let testName = 'the wall occupies three rows when the bottom wall tiles resolve';
+        await this.testWithDeterministicSeed(testName, config, 51515, async (map) => {
+            let wallsLayer = map.layers.find(layer => this.wallsLayerName === layer.name);
+            this.assert(wallsLayer, 'The walls layer must exist to prove the third wall row');
+            let firstRow = this.collectRowTiles(wallsLayer.data, map.width, 1);
+            let secondRow = this.collectRowTiles(wallsLayer.data, map.width, 2);
+            let thirdRow = this.collectRowTiles(wallsLayer.data, map.width, 3);
+            this.assert(
+                0 < TileCountingUtility.countNonZeroTiles(thirdRow),
+                'With the bottom wall tiles resolved the wall must reach row 3'
+            );
+            this.assertEqual(
+                TileCountingUtility.countNonZeroTiles(this.collectRowTiles(wallsLayer.data, map.width, 4)),
+                0,
+                'The three row wall must never reach row 4'
+            );
+            let middleColumn = Math.floor(map.width / 2);
+            this.assert(
+                thirdRow[middleColumn] !== firstRow[middleColumn],
+                'The third wall row must use its own tile, not the first row tile'
+            );
+            this.assert(
+                thirdRow[middleColumn] !== secondRow[middleColumn],
+                'The third wall row must use its own tile, not the second row tile'
+            );
+        });
+    }
+
     async testCornerColumnsAreSkippedBecauseTheSideBorderSitsBelowThem()
     {
         let config = this.setupWallsCompositeConfig('map-border-inner-walls-corners');

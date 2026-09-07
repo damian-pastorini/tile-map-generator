@@ -82,13 +82,13 @@ class TestMapBorderConfiguration extends BaseExpectedMapTest
         };
     }
 
-    async testCustomBorderTilesMatchCommittedExpectedMap()
+    async testCustomBorderTilesLandOnTheExactBorderIndexes()
     {
-        await this.test('bordersTiles per side and corner land on the exact border indexes of the expected map', async () => {
+        await this.test('bordersTiles per side and corner land on the exact border indexes', async () => {
             let config = this.buildBorderConfig('map-border-custom-tiles', {
                 bordersTiles: this.buildAllBordersTiles()
             });
-            let result = await this.runExpectedMapScenario(config, 44444, 'map-border-custom-tiles-expected.json');
+            let result = await this.generateSeededResult(config, 44444);
             let borderLayer = result.map.layers.find(layer => 'collisions-map-border' === layer.name);
             this.assert(borderLayer, 'The generated map must contain the collisions-map-border layer');
             this.assertEqual(borderLayer.data[0], 127, 'Top-left corner must use the configured corner tile');
@@ -212,14 +212,84 @@ class TestMapBorderConfiguration extends BaseExpectedMapTest
         });
     }
 
-    async testEntryPositionOpensExactGapOnCommittedExpectedMap()
+    async runCornerOpeningEndsScenario(mapName, entryPosition, rowIndex, leftEndKey, rightEndKey)
     {
-        await this.test('entryPosition down-middle with size four opens the exact border gap on the expected map', async () => {
+        let config = this.buildOpeningEndsConfig(mapName, entryPosition);
+        let result = await this.runExpectedMapScenario(config, 51515, mapName+'-expected.json');
+        this.assert(
+            this.copyTilesetImageNextToExpectedMap(mapName),
+            'The tileset image must be copied next to the expected map'
+        );
+        this.assertOpeningEndsUseTheInnerCorners(
+            result.map,
+            'down' === rowIndex ? result.map.height - 1 : 0,
+            config.entryPositionSize,
+            leftEndKey,
+            rightEndKey
+        );
+        return result;
+    }
+
+    async testBottomLeftOpeningEndsCloseOnTheCornerColumn()
+    {
+        await this.test('the bottom left entry opening closes the border line on the corner column', async () => {
+            await this.runCornerOpeningEndsScenario(
+                'map-border-opening-ends-down-left',
+                'down-left',
+                'down',
+                'border-inner-corner-bottom-right',
+                'border-inner-corner-top-left'
+            );
+        });
+    }
+
+    async testBottomRightOpeningEndsCloseOnTheCornerColumn()
+    {
+        await this.test('the bottom right entry opening closes the border line on the corner column', async () => {
+            await this.runCornerOpeningEndsScenario(
+                'map-border-opening-ends-down-right',
+                'down-right',
+                'down',
+                'border-inner-corner-top-right',
+                'border-inner-corner-bottom-left'
+            );
+        });
+    }
+
+    async testTopLeftOpeningEndsCloseOnTheCornerColumn()
+    {
+        await this.test('the top left entry opening closes the border line on the corner column', async () => {
+            await this.runCornerOpeningEndsScenario(
+                'map-border-opening-ends-top-left',
+                'top-left',
+                'top',
+                'border-inner-corner-top-right',
+                'border-inner-corner-bottom-left'
+            );
+        });
+    }
+
+    async testTopRightOpeningEndsCloseOnTheCornerColumn()
+    {
+        await this.test('the top right entry opening closes the border line on the corner column', async () => {
+            await this.runCornerOpeningEndsScenario(
+                'map-border-opening-ends-top-right',
+                'top-right',
+                'top',
+                'border-inner-corner-bottom-right',
+                'border-inner-corner-top-left'
+            );
+        });
+    }
+
+    async testEntryPositionOpensTheExactBorderGap()
+    {
+        await this.test('entryPosition down-middle with size four opens the exact border gap', async () => {
             let config = this.buildBorderConfig('map-border-entry-position', {
                 entryPosition: 'down-middle',
                 entryPositionSize: 4
             });
-            let result = await this.runExpectedMapScenario(config, 44444, 'map-border-entry-position-expected.json');
+            let result = await this.generateSeededResult(config, 44444);
             let borderLayer = result.map.layers.find(layer => 'collisions-map-border' === layer.name);
             this.assert(borderLayer, 'The generated map must contain the collisions-map-border layer');
             this.assertEqual(borderLayer.data[883], 0, 'The entry gap first tile must clear the border');

@@ -7,7 +7,7 @@
 const { BaseMapGeneratorTest } = require('./base-map-generator-test');
 const { MapBorderGenerator } = require('../lib/generator/map-border-generator');
 const { MapGridBuilder } = require('../lib/generator/map-grid-builder');
-const { ReturnPointWriter } = require('../lib/generator/return-point-writer');
+const { EntryPositionStubBuilder } = require('./entry-position-stub-builder');
 
 class TestMapBorderGenerator extends BaseMapGeneratorTest
 {
@@ -220,33 +220,10 @@ class TestMapBorderGenerator extends BaseMapGeneratorTest
         });
     }
 
-    buildEntryPositionStub(overrides)
-    {
-        let generator = this.buildGeneratorStub({
-            mapWidth: 10,
-            mapHeight: 8,
-            groundTile: 116,
-            entryPositionSize: 2,
-            entryPositionFrom: '',
-            borderLayer: Array(80).fill(116),
-            additionalLayers: [],
-            generatedChangePoints: {},
-            generatedReturnPoints: {},
-            returnPointWriter: new ReturnPointWriter(),
-            mapGrid: Array.from({length: 8}, () => Array(10).fill(true)),
-            generateLayerWithData: (name, data) => {
-                return {name, data};
-            }
-        });
-        Object.assign(generator, overrides);
-        generator.mapGridBuilder = new MapGridBuilder(generator);
-        return generator;
-    }
-
     async testCreateEntryPositionWritesLayerProperties()
     {
         await this.test('createEntryPosition attaches the recorded points to the emitted layer', async () => {
-            let generator = this.buildEntryPositionStub({
+            let generator = EntryPositionStubBuilder.build({
                 mapName: 'house-001',
                 entryPosition: 'down-middle',
                 entryPositionFrom: 'town-001'
@@ -259,10 +236,10 @@ class TestMapBorderGenerator extends BaseMapGeneratorTest
         });
     }
 
-    async testRedrawBorderForGrownMapReopensTheEntry()
+    async testRedrawBorderForGrownMapKeepsTheEntryWalkable()
     {
-        await this.test('redrawBorderForGrownMap redraws the border and reopens the entry gap', async () => {
-            let generator = this.buildEntryPositionStub({
+        await this.test('redrawBorderForGrownMap redraws the border and keeps the entry walkable', async () => {
+            let generator = EntryPositionStubBuilder.build({
                 blockMapBorder: true,
                 isBorderWalkable: false,
                 borderTile: 0,
@@ -280,7 +257,7 @@ class TestMapBorderGenerator extends BaseMapGeneratorTest
     async testReapplyEntryPositionWalkabilityIgnoresInvalidValues()
     {
         await this.test('reapplyEntryPositionWalkability ignores empty and malformed entry positions', async () => {
-            let generator = this.buildEntryPositionStub({
+            let generator = EntryPositionStubBuilder.build({
                 entryPosition: 'top',
                 mapGrid: Array.from({length: 8}, () => Array(10).fill(false))
             });
@@ -296,7 +273,7 @@ class TestMapBorderGenerator extends BaseMapGeneratorTest
     async testCreateEntryPosition()
     {
         await this.test('createEntryPosition opens the border and adds a change-points layer', async () => {
-            let generator = this.buildEntryPositionStub({entryPosition: 'top-middle'});
+            let generator = EntryPositionStubBuilder.build({entryPosition: 'top-middle'});
             new MapBorderGenerator(generator).createEntryPosition();
             this.assertEqual(generator.additionalLayers.length, 1);
             this.assertEqual(generator.additionalLayers[0].name, 'return-to-main-map-change-points');
@@ -310,7 +287,7 @@ class TestMapBorderGenerator extends BaseMapGeneratorTest
     async testApplyEntryPositionFrom()
     {
         await this.test('applyEntryPositionFrom records change and return points', async () => {
-            let generator = this.buildEntryPositionStub({mapName: 'town-01', entryPositionFrom: 'overworld'});
+            let generator = EntryPositionStubBuilder.build({mapName: 'town-01', entryPositionFrom: 'overworld'});
             let borderGenerator = new MapBorderGenerator(generator);
             let layerProperties = [];
             borderGenerator.applyEntryPositionFrom(layerProperties, 4, 0, 4, 0, 4, 1, 'down');

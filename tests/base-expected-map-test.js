@@ -41,7 +41,7 @@ class BaseExpectedMapTest extends BaseFunctionalityTest
     {
         let expectedPath = FileHandler.joinPaths(this.testDataFolder, expectedFileName);
         let existing = FileHandler.fetchFileJson(expectedPath);
-        if(existing){
+        if(existing && !process.env.RELDENS_REGENERATE_EXPECTED){
             return existing;
         }
         FileHandler.writeFile(expectedPath, buildFileContents(generatedData));

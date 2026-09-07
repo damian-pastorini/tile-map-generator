@@ -1,4 +1,4 @@
-# Tile Map Generator — Complete Flow Reference
+# Tile Map Generator - Complete Flow Reference
 
 ---
 
@@ -6,70 +6,70 @@
 
 The system has four stages:
 
-0. **Admin UI** — User configures tilesets and spots in the browser, triggers file generation, then navigates to the Maps Wizard
-1. **`tileset-to-tilemap`** — Server endpoint: receives the UI state, produces `composite.json` + `map-generator-config.json` + element PNGs
-2. **`tile-map-optimizer`** — Strips unused tiles from composite, produces optimized PNG + JSON
-3. **`tile-map-generator`** — Reads config + optimized composite → generates the final Tiled map JSON
+0. **Admin UI** - User configures tilesets and spots in the browser, triggers file generation, then navigates to the Maps Wizard
+1. **`tileset-to-tilemap`** - Server endpoint: receives the UI state, produces `composite.json` + `map-generator-config.json` + element PNGs
+2. **`tile-map-optimizer`** - Strips unused tiles from composite, produces optimized PNG + JSON
+3. **`tile-map-generator`** - Reads config + optimized composite → generates the final Tiled map JSON
 
 ---
 
 ## Stage 0: Admin UI → Generate → Maps Wizard
 
-### Tileset Editor: `TilesetGenerator` — `src/theme/admin/js/tileset-to-tilemap/tileset-generator.js`
+### Tileset Editor: `TilesetGenerator` - `src/theme/admin/js/tileset-to-tilemap/tileset-generator.js`
 
 `TilesetGenerator.generate()` serializes the current in-browser tileset state and POSTs it to the server's generate endpoint.
 
-**`serializeTileset(tileset)`** — builds the POST body for one tileset:
+**`serializeTileset(tileset)`** - builds the POST body for one tileset:
 - Copies all tileset fields (name, tileWidth, tileHeight, etc.)
-- Copies `spots: tileset.spots || []` — the full array of spot objects configured by the user. Each spot object has: `name`, `spotTile` (tileset-local index or null if not set), `width`, `height`, `quantity`, `markPercentage`, `variableTilesPercentage`, `freeSpaceAround`, `walkable`, `isElement`, `allowPathsInFreeSpace`, `mapCentered`, `placeRandomPath`, `depth`, `splitBordersInLayers`, `borderInnerWalls`, `borderOuterWalls`, `borderOuterWallsIncreaseLayerSize`, `surroundingTiles` (position dict), `corners` (position dict)
+- Copies `spots: tileset.spots || []` - the full array of spot objects configured by the user. Each spot object has: `name`, `spotTile` (tileset-local index or null if not set), `width`, `height`, `quantity`, `markPercentage`, `variableTilesPercentage`, `freeSpaceAround`, `walkable`, `isElement`, `allowPathsInFreeSpace`, `mapCentered`, `placeRandomPath`, `depth`, `splitBordersInLayers`, `borderInnerWalls`, `borderOuterWalls`, `borderOuterWallsIncreaseLayerSize`, `surroundingTiles` (position dict), `corners` (position dict)
 
-**`runGenerate(tilesets, fullTilesets)`** — POSTs to `GenerateRoute` on the server. The server writes all output files and returns a list of generated file entries. After a successful generate, the "Maps Wizard" button becomes visible if a session ID is present.
+**`runGenerate(tilesets, fullTilesets)`** - POSTs to `GenerateRoute` on the server. The server writes all output files and returns a list of generated file entries. After a successful generate, the "Maps Wizard" button becomes visible if a session ID is present.
 
-### Generate Endpoint: `GenerateRoute` — `tileset-to-tilemap/lib/routes/generate.js`
+### Generate Endpoint: `GenerateRoute` - `tileset-to-tilemap/lib/routes/generate.js`
 
 `GenerateRoute.handle(req, res)` reads:
-- `req.body.tilesets` — serialized tileset array (includes `spots[]` per tileset)
-- `req.body.fullTilesets` — full tileset data with image buffers
-- `req.body.sessionId` — session identifier
-- `req.body.mapName`, `req.body.mapTitle` — map naming
-- `req.body.globalTileOptions` — optional global tile options
+- `req.body.tilesets` - serialized tileset array (includes `spots[]` per tileset)
+- `req.body.fullTilesets` - full tileset data with image buffers
+- `req.body.sessionId` - session identifier
+- `req.body.mapName`, `req.body.mapTitle` - map naming
+- `req.body.globalTileOptions` - optional global tile options
 
 Delegates to `TilesetFilesBuilder.build(rootDir, sessionId, outputDir, tilesets, fullTilesets, mapName, mapTitle, globalTileOptions)`.
 
-### Session Config API: `GET /tileset-analyzer/api/session-wizard-config` — `tileset-analyzer-subscriber.js:92`
+### Session Config API: `GET /tileset-analyzer/api/session-wizard-config` - `tileset-analyzer-subscriber.js:92`
 
 When the Maps Wizard page opens with `?tilesetSessionId=X` in the URL, the client fetches this endpoint:
 - Reads `map-generator-config.json` from `storageDir/output/{sessionId}/`
-- Calls `MapsWizardConfigBuilder.buildPartialGeneratorData(config)` — `tileset-to-tilemap/lib/maps-wizard-config-builder.js:32`
+- Calls `MapsWizardConfigBuilder.buildPartialGeneratorData(config)` - `tileset-to-tilemap/lib/maps-wizard-config-builder.js:32`
 - Returns `{ strategy, partialData }` where `partialData` contains:
-  - `compositeElementsFile` — filename of the composite JSON
+  - `compositeElementsFile` - filename of the composite JSON
   - `automaticallyExtrudeMaps: 1`
   - Tile options extracted from `config.tileOptions`: `groundTile`, `pathTile`, `borderTile`, `randomGroundTiles`, `surroundingTiles`, `corners`, `bordersTiles`, `borderCornersTiles`
-  - `groundSpots` — the full ground spots config object (`{ spot_001: { layerName, tilesKey, width, height, spotTile: 0, ... } }`)
+  - `groundSpots` - the full ground spots config object (`{ spot_001: { layerName, tilesKey, width, height, spotTile: 0, ... } }`)
 
 ### Maps Wizard Client: `maps-wizard-bindings.js` + `maps-wizard-utils.js`
 
 When the Maps Wizard page loads with `prefillSessionId` in the URL:
 
 1. The strategy radio button is clicked → fires `change` event → `updateGeneratorDataFromInputs()` runs synchronously (at this point `extraProperties = {}`, so the textarea gets JSON without `groundSpots` yet)
-2. The async fetch returns → `setExtraProperties(wizardConfig.partialData, wizardConfig.strategy)` — captures any `partialData` property that has no matching `.config-input[data-property="..."]` element into the module-level `extraProperties` object. Because `compositeElementsFile` and `groundSpots` have no form inputs, they are captured into `extraProperties`.
-3. `fillInputsFromData(wizardConfig.partialData, wizardConfig.strategy)` — fills form inputs for properties that DO have matching `.config-input` elements (e.g. `mapSize`, `blockMapBorder`, etc.)
+2. The async fetch returns → `setExtraProperties(wizardConfig.partialData, wizardConfig.strategy)` - captures any `partialData` property that has no matching `.config-input[data-property="..."]` element into the module-level `extraProperties` object. Because `compositeElementsFile` and `groundSpots` have no form inputs, they are captured into `extraProperties`.
+3. `fillInputsFromData(wizardConfig.partialData, wizardConfig.strategy)` - fills form inputs for properties that DO have matching `.config-input` elements (e.g. `mapSize`, `blockMapBorder`, etc.)
 4. `updateGeneratorDataFromInputs()` → `buildGeneratorData(optionType)` → starts with `Object.assign({}, extraProperties)` (seeding from `compositeElementsFile` + `groundSpots`) then reads all `.config-input` elements for the selected strategy → serializes to `#generatorData` textarea
 
-**`setExtraProperties(data, optionType)`** — `maps-wizard-utils.js:66`:
+**`setExtraProperties(data, optionType)`** - `maps-wizard-utils.js:66`:
 Iterates all keys in `data`. For each key, queries for a `.config-input[data-option="common"][data-property="{key}"]` and a `.config-input[data-option="{optionType}"][data-property="{key}"]`. If neither exists, writes `extraProperties[key] = data[key]`. Resets `extraProperties` to `{}` on each call.
 
-**`buildGeneratorData(optionType)`** — `maps-wizard-utils.js:83`:
+**`buildGeneratorData(optionType)`** - `maps-wizard-utils.js:83`:
 Returns `Object.assign({}, extraProperties, ...commonInputs, ...optionInputs)`. The spread from `extraProperties` seeds all properties with no matching form input (including `groundSpots`, `compositeElementsFile`, `generatorType`, `mapsInformation`, `tileOptions`). Form inputs then overlay their values.
 
-**`updateInputsFromGeneratorData()`** — `maps-wizard-utils.js:127`:
+**`updateInputsFromGeneratorData()`** - `maps-wizard-utils.js:127`:
 Called when the user manually edits the `#generatorData` textarea. Parses the current textarea JSON, calls `setExtraProperties(jsonData, optionType)` to rebuild `extraProperties` from the textarea content, then fills form inputs. This keeps `extraProperties` consistent with whatever is in the textarea.
 
-### Maps Wizard Submit: `MapsWizardSubscriber` — `src/lib/admin/server/subscribers/maps-wizard-subscriber.js`
+### Maps Wizard Submit: `MapsWizardSubscriber` - `src/lib/admin/server/subscribers/maps-wizard-subscriber.js`
 
 On POST `/maps-wizard` with `mainAction = 'generate'`:
-1. `generatorData = req.body.generatorData` — the JSON string from the `#generatorData` textarea
-2. `mapData = sc.toJson(generatorData)` — parsed object; includes `groundSpots`, `compositeElementsFile`, all form input values
+1. `generatorData = req.body.generatorData` - the JSON string from the `#generatorData` textarea
+2. `mapData = sc.toJson(generatorData)` - parsed object; includes `groundSpots`, `compositeElementsFile`, all form input values
 3. `handlerParams = { mapData, rootFolder }` where `rootFolder` is `tilesetSessionsDir/output/{safeSessionId}` when a session is active
 4. `runner.run('elements-composite-loader', handlerParams)` → see Stage 3 below
 
@@ -77,7 +77,7 @@ On POST `/maps-wizard` with `mainAction = 'generate'`:
 
 ## Stage 0b: Client-Side Tileset State Management
 
-This section documents how the in-browser tileset state is created, stored, and mutated — all of which directly determines what the server receives when the user clicks Generate.
+This section documents how the in-browser tileset state is created, stored, and mutated - all of which directly determines what the server receives when the user clicks Generate.
 
 ### In-Memory State Shape
 
@@ -119,20 +119,20 @@ tileset.spots[i] = {
 }
 ```
 
-### New Spot Creation: `TilesetTileOptionsBinder.addSpot()` — `tileset-tile-options-binder.js:209`
+### New Spot Creation: `TilesetTileOptionsBinder.addSpot()` - `tileset-tile-options-binder.js:209`
 
 When the user clicks "Add Spot":
-1. `buildDefaultSpot('spot-NNN')` is called — returns the shape above with `width: 5, height: 5` defaults
+1. `buildDefaultSpot('spot-NNN')` is called - returns the shape above with `width: 5, height: 5` defaults
 2. The new spot is pushed to `tileset.spots`
-3. `app.selectedSpot = { tilesetIndex, spotIndex }` — auto-selects the new spot
-4. `app.editor.renderLegend(tilesetIndex)` — re-renders the legend panel with the new spot row
+3. `app.selectedSpot = { tilesetIndex, spotIndex }` - auto-selects the new spot
+4. `app.editor.renderLegend(tilesetIndex)` - re-renders the legend panel with the new spot row
 
-**`buildDefaultSpot(name)`** — `tileset-tile-options-binder.js:46`:
-- Sets `width: 5, height: 5` — these defaults ensure the spot is always placeable for new spots
-- Sets `spotTile: null` — user must pick a tile; without it the spot uses `groundTile` as fill
-- Sets `freeSpaceAround: null` — computed to 1 when absent in `buildGroundSpotConfig()`
+**`buildDefaultSpot(name)`** - `tileset-tile-options-binder.js:46`:
+- Sets `width: 5, height: 5` - these defaults ensure the spot is always placeable for new spots
+- Sets `spotTile: null` - user must pick a tile; without it the spot uses `groundTile` as fill
+- Sets `freeSpaceAround: null` - computed to 1 when absent in `buildGroundSpotConfig()`
 
-### Session Loading: `StateBuilder.buildTileset()` — `state-builder.js`
+### Session Loading: `StateBuilder.buildTileset()` - `state-builder.js`
 
 When loading a saved session from disk, `buildTileset(tilesetData)` sets:
 ```javascript
@@ -140,39 +140,39 @@ spots: tilesetData.spots || []
 ```
 No normalization or default-filling of spot properties occurs. If the session was saved when `buildDefaultSpot()` did NOT set `width`/`height` defaults (old code), or if the user manually cleared those inputs, the loaded spot objects may have `width: null, height: null`. These null values propagate unchanged through all subsequent steps.
 
-### Spot Props UI: `TilesetSpotEditor` — `spot-editor.js`
+### Spot Props UI: `TilesetSpotEditor` - `spot-editor.js`
 
-**`appendSpotRow(list, spot, si, tileset, tilesetIndex, spotTemplate)`** — `spot-editor.js:8`:
+**`appendSpotRow(list, spot, si, tileset, tilesetIndex, spotTemplate)`** - `spot-editor.js:8`:
 - Clones the `<template id="spot-template">` HTML fragment
 - Calls `initSpotProps(frag, spot)` to bind all `[data-prop]` inputs to `spot` object
 - Binds spot header click → toggle expand/collapse via `app.selectedSpot`
 - Binds `nameInput.blur` → update `tileset.spots[si].name` and re-render legend
 - Binds `deleteBtn.click` → splice spot from `tileset.spots[]`, re-render
 
-**`initSpotProps(frag, spot)`** — `spot-editor.js:129` (after fix):
+**`initSpotProps(frag, spot)`** - `spot-editor.js:129` (after fix):
 Iterates all `[data-prop]` elements. For each element:
 - **checkbox** (`el.type === 'checkbox'`): sets `el.checked = spot[key] || false`, binds `change` listener
 - **number** (`el.type === 'number'`): calls `initNumberSpotProp(el, key, spot)` (see below), binds `input` listener → `spot[key] = el.value === '' ? null : +el.value`
 - **other**: if `spot[key] !== undefined`, sets `el.value = spot[key]`; binds `input` listener → `spot[key] = el.value`
 
-**`initNumberSpotProp(el, key, spot)`** — `spot-editor.js:116` (added in fix):
+**`initNumberSpotProp(el, key, spot)`** - `spot-editor.js:116` (added in fix):
 - If `spot[key]` is not null/undefined: sets `el.value = spot[key]` (normal case)
 - If `spot[key]` is null or undefined: reads `el.min`, converts to number; if min > 0, sets both `spot[key] = minVal` AND `el.value = minVal`
-- This fixes old sessions where `spot.width = null` or `spot.height = null` — at render time the spot's null dimension is replaced with the input's `min` value (e.g. `1`), preventing null from flowing to the generator
+- This fixes old sessions where `spot.width = null` or `spot.height = null` - at render time the spot's null dimension is replaced with the input's `min` value (e.g. `1`), preventing null from flowing to the generator
 
-**`bindSpotBulkCheckbox()` / `bindSpotLockBtn()`** — `spot-editor.js:62,75`:
+**`bindSpotBulkCheckbox()` / `bindSpotLockBtn()`** - `spot-editor.js:62,75`:
 Handle bulk selection and lock (approved) state. Lock state prevents the spot from being removed in bulk operations.
 
-### Spot Prop Change Bindings: `TilesetSpotPropsBinder` — `tileset-spot-props-binder.js`
+### Spot Prop Change Bindings: `TilesetSpotPropsBinder` - `tileset-spot-props-binder.js`
 
-Separate from `spot-editor.js` — only adds `change` event listeners (NOT initial value reading). Handles:
+Separate from `spot-editor.js` - only adds `change` event listeners (NOT initial value reading). Handles:
 - Number inputs: `spot[key] = prop.value === '' ? null : +prop.value`
 - Checkbox inputs: `spot[key] = el.checked`
 - Text inputs: `spot[key] = el.value`
 
-**Important**: this binder only fires on user-initiated changes, NOT at initialization time. It does NOT fix null values at load time — that is done by `initNumberSpotProp()` in `spot-editor.js`.
+**Important**: this binder only fires on user-initiated changes, NOT at initialization time. It does NOT fix null values at load time - that is done by `initNumberSpotProp()` in `spot-editor.js`.
 
-### Spot Tile Pick: `TilesetTileOptionsPickHandler.handleSpotTilePick()` — `tileset-tile-options-pick-handler.js`
+### Spot Tile Pick: `TilesetTileOptionsPickHandler.handleSpotTilePick()` - `tileset-tile-options-pick-handler.js`
 
 When the user clicks a tile in the tileset canvas while a spot-tile option button is active:
 ```javascript
@@ -184,13 +184,13 @@ This is the **tileset-local index** (0-based, within the specific tileset). NOT 
 
 ### Spot Lock State: `approved` flag
 
-When `spot.approved = true`, the spot row shows a lock icon and the spot is excluded from bulk delete operations. This flag is purely UI state — it is serialized into the session but has no effect on generation.
+When `spot.approved = true`, the spot row shows a lock icon and the spot is excluded from bulk delete operations. This flag is purely UI state - it is serialized into the session but has no effect on generation.
 
 ---
 
 ## Stage 1: UI → Composite JSON + Config JSON
 
-**Entry point:** `TilesetFilesBuilder.build()` — `tileset-to-tilemap/lib/tileset-files-builder.js:259`
+**Entry point:** `TilesetFilesBuilder.build()` - `tileset-to-tilemap/lib/tileset-files-builder.js:259`
 
 ### Flow
 
@@ -205,17 +205,17 @@ TilesetFilesBuilder.build()
       → TilesetCompositeConfigBuilder.buildConfigData() // map-generator-config.json
 ```
 
-### `CompositeBuilder.buildCompositeJSON()` — `composite-builder.js:16`
+### `CompositeBuilder.buildCompositeJSON()` - `composite-builder.js:16`
 
-Builds the Tiled map JSON that represents the "elements composite" — a single map containing all elements as separate layers, with tilesets listed and annotations/wangsets embedded.
+Builds the Tiled map JSON that represents the "elements composite" - a single map containing all elements as separate layers, with tilesets listed and annotations/wangsets embedded.
 
 Steps:
-1. `CompositeAnnotationResolver.resolve()` — merges per-tileset `tileOptions` and `globalTileOptions` into `effectivePerTileset[]`
-2. `preprocessTilesets()` — builds `tilesetEntries[]`, collects all elements into flat `elements[]`, tracks `tilesetFirstgids[]`
-3. `annotationResolver.resolvePathTileCompositeId()` — finds path tile's composite GID (`firstgid + opts.pathTile`)
-4. `packElements()` — bin-packs elements onto a canvas, returns `placements[]` + canvas size
-5. `buildLayers()` — for each placement builds one layer per element layer; path layers get all tiles replaced with `pathTileCompositeId`; first layer gets `quantity`/`freeSpaceAround`/`allowPathsInFreeSpace` properties
-6. `buildVariationLayers()` — appends: `ground-variations` layer (random ground tile IDs listed sequentially), `tileset-ref` layer (annotated tile IDs), spot variation layers (`spot-layer-ground-variations-{spotKey}`)
+1. `CompositeAnnotationResolver.resolve()` - merges per-tileset `tileOptions` and `globalTileOptions` into `effectivePerTileset[]`
+2. `preprocessTilesets()` - builds `tilesetEntries[]`, collects all elements into flat `elements[]`, tracks `tilesetFirstgids[]`
+3. `annotationResolver.resolvePathTileCompositeId()` - finds path tile's composite GID (`firstgid + opts.pathTile`)
+4. `packElements()` - bin-packs elements onto a canvas, returns `placements[]` + canvas size
+5. `buildLayers()` - for each placement builds one layer per element layer; path layers get all tiles replaced with `pathTileCompositeId`; first layer gets `quantity`/`freeSpaceAround`/`allowPathsInFreeSpace` properties
+6. `buildVariationLayers()` - appends: `ground-variations` layer (random ground tile IDs listed sequentially), `tileset-ref` layer (annotated tile IDs), spot variation layers (`spot-layer-ground-variations-{spotKey}`)
 7. Returns full Tiled map object
 
 ### Per-instance output layer naming - `ElementLayerName` (`lib/utilities/element-layer-name.js`)
@@ -232,20 +232,20 @@ Used by:
 - `PatternMatcher.countElementInstancesInMap()`: counts an element's instances by distinct instance indices.
 - `ElementPositionAnalyzer.findElementPositionsInMap()`: groups an element's layers by instance index, one position per instance.
 
-**Key method in `createTilesetEntry()` — `composite-builder.js:106`:**
-- `CompositeTileAnnotationBuilder.buildTileAnnotations()` — adds `tiles[]` with `key` and `groundSpots` properties (see annotation rules below)
-- `CompositeWangsetBuilder.buildSpotWangsets()` — adds `wangsets[]` for inner/outer walls (see wangset rules below)
+**Key method in `createTilesetEntry()` - `composite-builder.js:106`:**
+- `CompositeTileAnnotationBuilder.buildTileAnnotations()` - adds `tiles[]` with `key` and `groundSpots` properties (see annotation rules below)
+- `CompositeWangsetBuilder.buildSpotWangsets()` - adds `wangsets[]` for inner/outer walls (see wangset rules below)
 
-### `TilesetCompositeConfigBuilder.buildConfigData()` — `tileset-composite-config-builder.js:123`
+### `TilesetCompositeConfigBuilder.buildConfigData()` - `tileset-composite-config-builder.js:123`
 
 Produces `map-generator-config.json`. Key fields:
-- `generatorType` — from first tileset or defaults to `COMPOSITE`
-- `compositeElementsFile` — filename of the composite JSON
-- `mapsInformation[]` — `{mapName, mapTitle}` per tileset
-- `tileOptions` — merged from `TileOptionsMerger.merge()` using `firstgids`
-- `groundSpots` — keyed by normalized spot name (`-` → `_`), built by `buildGroundSpotConfig()`
+- `generatorType` - from first tileset or defaults to `COMPOSITE`
+- `compositeElementsFile` - filename of the composite JSON
+- `mapsInformation[]` - `{mapName, mapTitle}` per tileset
+- `tileOptions` - merged from `TileOptionsMerger.merge()` using `firstgids`
+- `groundSpots` - keyed by normalized spot name (`-` → `_`), built by `buildGroundSpotConfig()`
 
-**`buildGroundSpotConfig()` — `tileset-composite-config-builder.js:59`:**
+**`buildGroundSpotConfig()` - `tileset-composite-config-builder.js:59`:**
 ```
 {
   layerName: normalizedKey,
@@ -265,9 +265,9 @@ Produces `map-generator-config.json`. Key fields:
 }
 ```
 
-`spotTile` is only written into the config when the user has picked a tile for the spot (`null !== spotTile` check). When present, the composite GID is computed as `firstgid + spotTile`, where `firstgid` is the tileset's starting GID in the composite. This produces the correct tile ID for the optimized composite pipeline. When absent, `sc.get(groundSpotConfig, 'spotTile', this.groundTile)` in the generator returns `this.groundTile` as fallback — the spot is filled with the same tile as the ground and visually blends into the terrain.
+`spotTile` is only written into the config when the user has picked a tile for the spot (`null !== spotTile` check). When present, the composite GID is computed as `firstgid + spotTile`, where `firstgid` is the tileset's starting GID in the composite. This produces the correct tile ID for the optimized composite pipeline. When absent, `sc.get(groundSpotConfig, 'spotTile', this.groundTile)` in the generator returns `this.groundTile` as fallback - the spot is filled with the same tile as the ground and visually blends into the terrain.
 
-`width` and `height` are null-safe: if the value is null or `<= 0`, the fallback of `5` is used, matching the default from `buildDefaultSpot()`. `sc.get` uses `hasOwn` internally — a key set to `null` returns `null` (not the fallback), so the null check must be explicit.
+`width` and `height` are null-safe: if the value is null or `<= 0`, the fallback of `5` is used, matching the default from `buildDefaultSpot()`. `sc.get` uses `hasOwn` internally - a key set to `null` returns `null` (not the fallback), so the null check must be explicit.
 
 `isElement` defaults to `true` on the server side when the property is absent from the spot data. `depth` also defaults to `true` on the server side. These server-side defaults ensure that spots configured without explicit `isElement`/`depth` values are treated as visible positioned layers placed above ground.
 
@@ -277,17 +277,17 @@ Produces `map-generator-config.json`. Key fields:
 
 ## Stage 2: Tile Map Optimization
 
-**Entry:** `TileMapOptimizer.optimize()` — `tile-map-optimizer/lib/tile-map-optimizer.js:87`
+**Entry:** `TileMapOptimizer.optimize()` - `tile-map-optimizer/lib/tile-map-optimizer.js:87`
 
 ### What it does
 
-1. `parseJSON()` — scans ALL layer data arrays, collects every unique non-zero tile ID used across all layers into `mappedOldToNewTiles[]` (sorted, zero removed). Also collects animation frames and wangset tile IDs.
-2. `createThumbsFromLayersData()` — for each tile in `mappedOldToNewTiles`, extracts the tile image from source tileset PNG, places it sequentially in a new packed PNG. Updates `newImagesPositions[oldGID] = newPosition` (1-based).
-3. `createNewJSON()` — remaps all layer data values via `newImagesPositions[old] = new`. Remaps tile annotation `id` fields to `newImagesPosition - 1`. Copies `tile.properties` as-is (no remapping). Remaps wangset `tileid` values via `newImagesPositions[tileset.first + wangsetTile.tileid] - 1`.
+1. `parseJSON()` - scans ALL layer data arrays, collects every unique non-zero tile ID used across all layers into `mappedOldToNewTiles[]` (sorted, zero removed). Also collects animation frames and wangset tile IDs.
+2. `createThumbsFromLayersData()` - for each tile in `mappedOldToNewTiles`, extracts the tile image from source tileset PNG, places it sequentially in a new packed PNG. Updates `newImagesPositions[oldGID] = newPosition` (1-based).
+3. `createNewJSON()` - remaps all layer data values via `newImagesPositions[old] = new`. Remaps tile annotation `id` fields to `newImagesPosition - 1`. Copies `tile.properties` as-is (no remapping). Remaps wangset `tileid` values via `newImagesPositions[tileset.first + wangsetTile.tileid] - 1`.
 
 ### What survives optimization
 
-A tile only survives if it appears in at least one layer's data array. Tiles that exist only in annotations (`tiles[]`) or wangsets but are never placed in any layer data are dropped — their `id` remapping produces a CRITICAL log and the annotation entry is removed from the optimized composite.
+A tile only survives if it appears in at least one layer's data array. Tiles that exist only in annotations (`tiles[]`) or wangsets but are never placed in any layer data are dropped - their `id` remapping produces a CRITICAL log and the annotation entry is removed from the optimized composite.
 
 The spot tile must appear in the `tileset-ref` layer (added by `buildVariationLayers()`) to survive optimization and receive a valid new position. `buildVariationLayers()` in `composite-builder.js` explicitly adds a layer containing `firstgid + annotatedId` for every annotated tile, including spot tiles, to ensure they survive this step.
 
@@ -301,7 +301,7 @@ The `newJSONResized` is used when `factor > 1` (pixel-doubled tileset). The opti
 
 ## Stage 3: Map Generation
 
-**Entry:** `RandomMapGenerator.fromElementsProvider(props)` — `random-map-generator.js:194`
+**Entry:** `RandomMapGenerator.fromElementsProvider(props)` - `random-map-generator.js:194`
 
 ```
 fromElementsProvider(props)
@@ -316,19 +316,19 @@ fromElementsProvider(props)
   → resetInstance(mappedMapDataFromProvider)
 ```
 
-### `ElementsProvider.optimizeMap()` — `elements-provider.js:221`
+### `ElementsProvider.optimizeMap()` - `elements-provider.js:221`
 
 Runs `TileMapOptimizer` on the composite JSON, then calls `fetchPathTiles()`.
 
-### `ElementsProvider.fetchPathTiles()` — `elements-provider.js:236`
+### `ElementsProvider.fetchPathTiles()` - `elements-provider.js:236`
 
 Reads the optimized tileset's `tiles[]` annotations (already remapped to new IDs). Populates:
 
-- `this.groundSpots[spotKey] = newTileId` — from `property.name === 'groundSpots'`
-- `this.pathTile` — from `property.value === 'pathTile'`
-- `this.groundTile` / `this.groundTiles[]` — from `property.value === 'groundTile'`
-- `this.bordersTiles[direction]` — from `property.value` matching `'border-{direction}'`
-- `this.groundSpotsPropertiesMappers[spotKey]` — created and populated for spot tile annotations
+- `this.groundSpots[spotKey] = newTileId` - from `property.name === 'groundSpots'`
+- `this.pathTile` - from `property.value === 'pathTile'`
+- `this.groundTile` / `this.groundTiles[]` - from `property.value === 'groundTile'`
+- `this.bordersTiles[direction]` - from `property.value` matching `'border-{direction}'`
+- `this.groundSpotsPropertiesMappers[spotKey]` - created and populated for spot tile annotations
 
 **Key parsing rule for `key` properties (lines 280–301):**
 ```
@@ -351,7 +351,7 @@ When `useSpotPropertyMapper` is true:
 
 After the loop: `this.surroundingTiles = this.propertiesMapper.surroundingTiles` and `this.corners = this.propertiesMapper.corners` (for the global/path tiles mapper).
 
-### `ElementsProvider.splitByLayerName()` — `elements-provider.js:121`
+### `ElementsProvider.splitByLayerName()` - `elements-provider.js:121`
 
 Iterates composite layers. Each layer name must have at least 3 parts separated by `-` (format: `{name}-{index}-{layerType}`). This is the step that cuts the composite canvas back into individual elements: every layer is assigned to a GROUP, and each group later becomes exactly ONE placeable element.
 
@@ -369,16 +369,16 @@ Special handling:
 - `spot-layer-{tilesKey}-ground-variations` → populates `this.elementsVariations[tilesKey][]`
 - Reads layer `properties` per group: `quantity`, `freeSpaceAround`, `allowPathsInFreeSpace`, `mapCentered` (each read assigns the group entry, so the value on the group's property-carrying layer wins)
 
-### `MapDataMapper.fromProvider()` — `data-mapper.js:13`
+### `MapDataMapper.fromProvider()` - `data-mapper.js:13`
 
 Merges provider data into props. **Key fields passed through:**
-- `groundSpots` — comes from **original `props`** (the config JSON), NOT from `elementsProvider.groundSpots`
-- `groundSpotsPropertiesMappers` — from `elementsProvider.groundSpotsPropertiesMappers`
-- `optimizedMapFirstTileset` — `optimizedMap.tilesets[0]` (with wangsets, tiles, firstgid=1)
-- `layerElements` — `elementsProvider.croppedElements`
-- `groundTile`, `pathTile`, `randomGroundTiles`, `surroundingTiles`, `corners`, `bordersTiles` — from provider
+- `groundSpots` - comes from **original `props`** (the config JSON), NOT from `elementsProvider.groundSpots`
+- `groundSpotsPropertiesMappers` - from `elementsProvider.groundSpotsPropertiesMappers`
+- `optimizedMapFirstTileset` - `optimizedMap.tilesets[0]` (with wangsets, tiles, firstgid=1)
+- `layerElements` - `elementsProvider.croppedElements`
+- `groundTile`, `pathTile`, `randomGroundTiles`, `surroundingTiles`, `corners`, `bordersTiles` - from provider
 
-### `RandomMapGenerator.resetInstance()` — `random-map-generator.js:41`
+### `RandomMapGenerator.resetInstance()` - `random-map-generator.js:41`
 
 Sets all options via `setOptions()`. Critical initialization:
 ```javascript
@@ -415,7 +415,7 @@ If none of the three sources yields tiles, every `TilesShortcuts` slot (`sTC`, `
 
 ## Stage 3a: Spot Generation
 
-**Entry:** `SpotGenerator.generateSpots()` — `spot-generator.js:35`
+**Entry:** `SpotGenerator.generateSpots()` - `spot-generator.js:35`
 
 Called first in `RandomMapGenerator.generate()` before map grid creation, because spots can become elements that affect map sizing.
 
@@ -448,17 +448,17 @@ for each spotKey in this.groundSpots:
 
 **Spot types and layer placement:**
 
-**Functional invisible layers** (`isElement: false`): The spot layers are stored in `groundSpotConfig.spotLayers`. `generateInvisibleSpots()` places them at a random position on the full map grid and pushes them into `staticLayers` before the ground layer is added, so they sit below all visible terrain. These spots serve as functional zones — respawn areas, event triggers, zone markers — where only the tile data matters for gameplay logic. The tiles used may be transparent or visually indistinct from the ground.
+**Functional invisible layers** (`isElement: false`): The spot layers are stored in `groundSpotConfig.spotLayers`. `generateInvisibleSpots()` places them at a random position on the full map grid and pushes them into `staticLayers` before the ground layer is added, so they sit below all visible terrain. These spots serve as functional zones - respawn areas, event triggers, zone markers - where only the tile data matters for gameplay logic. The tiles used may be transparent or visually indistinct from the ground.
 
 **Visible positioned layers** (`isElement: true`): `saveLayerElements()` stores them in `layerElements`. The map generator places them using the element placement system (respecting `freeSpaceAround`, `quantity`, `allowPathsInFreeSpace`, etc.). These spots become `additionalLayers`, which are merged after all `staticLayers`, placing them on top of the terrain. When `depth: true`, `reorderLayersBasedOnSpots` additionally moves the spot layer to index 1 in the final stack (directly above ground at index 0).
 
 **`depth` and `isElement` interaction:** `depth: true` only takes effect when combined with `isElement: true`. The spot must first be in `layerElements` (via `saveLayerElements`) for `reorderLayersBasedOnSpots` to locate and reorder it. A spot with `depth: true` and `isElement: false` is excluded from both paths: `generateInvisibleSpots` filters out spots where `depth` is truthy, and `saveLayerElements` is only called when `isElement: true`. Such a spot is not placed in any layer.
 
-### `mapTilesShortcuts()` — `random-map-generator.js:1567`
+### `mapTilesShortcuts()` - `random-map-generator.js:1567`
 
 Calls `TilesShortcuts.fromPropertiesMappersList()`.
 
-### `TilesShortcuts.fromPropertiesMappersList()` — `tiles-shortcuts.js:34`
+### `TilesShortcuts.fromPropertiesMappersList()` - `tiles-shortcuts.js:34`
 
 ```javascript
 // If suffix is provided (e.g. '-inner-walls'):
@@ -487,7 +487,7 @@ if(!propertiesMapper
 instance = new TilesShortcuts(mappedData.mainTile || mainTile, mappedData.surroundingTilesPosition, ...)
 ```
 
-### `TilesShortcuts` constructor — `tiles-shortcuts.js:13`
+### `TilesShortcuts` constructor - `tiles-shortcuts.js:13`
 
 ```javascript
 this.sMC = surroundingTilesPosition[prefix+'middle-center'];
@@ -499,13 +499,13 @@ this.p = 0 === pathTile && 0 !== this.sMC ? this.sMC : pathTile;
 
 **This is how `spotTile = 0` from config becomes the real optimized tile ID.**
 
-### PropertiesMapper — `properties-mapper.js`
+### PropertiesMapper - `properties-mapper.js`
 
 Created with `new PropertiesMapper(spotKey)`, prefix becomes `'{spotKey}-'`.
 
-- `mapSurroundingByKey(key, value)` — maps full key (e.g. `'spot_001-middle-center'`) → stores in `surroundingTiles['-1,0']` etc.
-- `mapCornersByKey(cleanCornerKey, value)` — maps `'top-left'` → stores in `corners['-1,-1']` etc.
-- `map()` — converts `surroundingTiles` → `surroundingTilesPosition` and `corners` → `cornersPosition` (named keys like `'spot_001-top-left'`)
+- `mapSurroundingByKey(key, value)` - maps full key (e.g. `'spot_001-middle-center'`) → stores in `surroundingTiles['-1,0']` etc.
+- `mapCornersByKey(cleanCornerKey, value)` - maps `'top-left'` → stores in `corners['-1,-1']` etc.
+- `map()` - converts `surroundingTiles` → `surroundingTilesPosition` and `corners` → `cornersPosition` (named keys like `'spot_001-top-left'`)
 
 **`surroundingTilesPosition` keys have the mapper prefix:** e.g. `'spot_001-top-left'`, `'spot_001-middle-center'` etc.
 
@@ -527,7 +527,7 @@ this.cTL = cornersPosition['spot_001-top-left'];
 wallsLayer = this.createLayerInnerWalls(bordersLayer, tilesKey, spotTilesShortcuts, width, height);
 ```
 
-### `WallsGenerator.createLayerInnerWalls()` — `walls-generator.js:28`
+### `WallsGenerator.createLayerInnerWalls()` - `walls-generator.js:28`
 
 ```javascript
 innerWallsTilesShortcuts = this.mapTilesShortcuts(tilesKey, spotTilesShortcuts.p, null, '-inner-walls');
@@ -537,7 +537,7 @@ innerWallsTilesShortcuts = this.mapTilesShortcuts(tilesKey, spotTilesShortcuts.p
 // Finds wangset named 'spot_001-inner-walls' in optimized tileset
 ```
 
-Then `determineWallTiles(innerWallsTilesShortcuts, spotTilesShortcuts, currentTile)` — `walls-generator.js:206`:
+Then `determineWallTiles(innerWallsTilesShortcuts, spotTilesShortcuts, currentTile)` - `walls-generator.js:206`:
 ```javascript
 if(currentTile === spotTilesShortcuts.cTL)  → [innerWallsTilesShortcuts.sML, innerWallsTilesShortcuts.cTL]
 if(currentTile === spotTilesShortcuts.sTC)  → [innerWallsTilesShortcuts.sMC, innerWallsTilesShortcuts.sTC]
@@ -548,10 +548,10 @@ if(currentTile === spotTilesShortcuts.cTR)  → [innerWallsTilesShortcuts.sMR, i
 
 ### Wangset naming convention
 
-Wangsets are created by `CompositeWangsetBuilder.buildSpotWangsets()` — `composite-wangset-builder.js:106`:
-- `'{normalizedSpotKey}'` — the spot ground ring, from `spot.surroundingTiles` plus `spot.corners`, with `spot.spotTile` used as the `0,0` middle center when the spot has no explicit one
-- `'{normalizedSpotKey}-inner-walls'` — from `spot.innerWallsTiles` plus `spot.innerWallsCornerTiles`
-- `'{normalizedSpotKey}-outer-walls'` — from `spot.outerWallsTiles` plus `spot.outerWallsCornerTiles`
+Wangsets are created by `CompositeWangsetBuilder.buildSpotWangsets()` - `composite-wangset-builder.js:106`:
+- `'{normalizedSpotKey}'` - the spot ground ring, from `spot.surroundingTiles` plus `spot.corners`, with `spot.spotTile` used as the `0,0` middle center when the spot has no explicit one
+- `'{normalizedSpotKey}-inner-walls'` - from `spot.innerWallsTiles` plus `spot.innerWallsCornerTiles`
+- `'{normalizedSpotKey}-outer-walls'` - from `spot.outerWallsTiles` plus `spot.outerWallsCornerTiles`
 
 These wangset names are what `TilesShortcuts.fetchWangsetByName(tilesKey, ...)` searches for. The bare
 `'{normalizedSpotKey}'` wangset is required: without it `fetchWangsetByName` returns false, every
@@ -572,9 +572,9 @@ It is true when the spot has surrounding tiles, or corner tiles, or `borderInner
 ### Spot wall and border layer suffixes
 
 `SpotLayersBuilder` appends a configurable suffix to each emitted layer name:
-- `wallsLayerSuffix` — appended to `'{layerKey}-inner-walls'`
-- `borderLayerSuffix` — appended to `'{layerKey}-borders'`
-- `outerWallsLayerSuffix` — appended to `'{layerKey}-outer-walls'`
+- `wallsLayerSuffix` - appended to `'{layerKey}-inner-walls'`
+- `borderLayerSuffix` - appended to `'{layerKey}-borders'`
+- `outerWallsLayerSuffix` - appended to `'{layerKey}-outer-walls'`
 
 All three default to an empty string. The Reldens game engine treats a layer as a collision zone only when its
 name ends in `-collisions`, so with the default empty suffix these layers render but do not block the player.
@@ -599,9 +599,9 @@ map border.
 
 ### Ground spot fill options
 
-- `markPercentage` — when 100 or more the spot area is filled completely, otherwise
+- `markPercentage` - when 100 or more the spot area is filled completely, otherwise
   `round(totalTiles * markPercentage / 100)` tiles are filled at random positions inside the area
-- `placeRandomPath` (default false) — carves a random path through the spot area
+- `placeRandomPath` (default false) - carves a random path through the spot area
 
 ### Entry position values
 
@@ -614,10 +614,47 @@ The value must be exactly two dash separated parts, `direction-position`:
 - position: `left`, `middle` or `right`
 
 So the six accepted values are `top-left`, `top-middle`, `top-right`, `down-left`, `down-middle` and
-`down-right`. Anything else logs a critical and leaves the border sealed. Note that the `autoGrow` reject
-resolver grows the map bottom, which invalidates an already computed entry position.
+`down-right`. Anything else logs a critical and leaves the border sealed.
 
-### `WangsetMapper` — `wangset-mapper.js`
+`createEntryPosition()` runs after `placeElements()`, never inside `populateCollisionsMapBorder()`, so it is
+always cut against the final map size. See "Map size and why the map can grow" below for the ordering and the
+bug it prevents. Do not move this call earlier: `PlacementRejectResolver.growMapBottom()` rebuilds the whole
+border ring through `redrawBorderForGrownMap()`, so a gap cut before placement is drawn over, and its change
+points are left on the pre grow row while the border moves to the new bottom.
+
+### Entry position opening ends
+
+`MapBorderGenerator.stampEntryPositionEnds()` puts a tile on each side of the gap through
+`fetchOpeningEndTile(isTopBorder, side)`, which resolves two different vocabularies:
+
+- `borderInnerCornersTiles` is rotated 180 degrees against the border for a **mid run** end. A **bottom**
+  opening takes the `top-*` pair and a **top** opening takes the `bottom-*` pair, and both flip left with
+  right, so the left end of a bottom opening takes `top-right`. This is the same rotation the wall band uses,
+  documented in `reldens/.claude/tileset-to-map-generator-technical.md`.
+- An end landing on a **map corner column** keeps the border own family instead, side flipped only, because
+  there the line closes into the map corner rather than turning inwards: the right end of a bottom `right`
+  opening takes `bottom-left`. Rotating that one leaves the closing tile shaded against the line and the
+  border reads as broken at the turn.
+- The fallback, used when no inner corners are configured, reads the `bordersTiles` outer corners and flips
+  only the side, because those are the map real corners: the left end of a bottom opening takes
+  `bottom-right`, the tile the map already draws at its own bottom right corner.
+
+Both ends are stamped even when the opening sits against a map corner, so a `left` or `right` entry position
+closes the line on the corner column itself instead of leaving the corner tile with nothing joining it.
+
+### Map border inner walls
+
+`MapBorderWallsDrawer` (`lib/generator/map-border-walls-drawer.js`) owns the walls that hang below the top
+border. It reads the wangset named `map-border-inner-walls`, emitted by the tileset editor through
+`CompositeWangsetBuilder.buildMapBorderWallsWangset()`, so the border walls travel the same wangset channel
+the spot walls use and the generator needs no border specific mapper.
+
+A top border opening would be sealed by the wall drawn directly below it. `openWallsForEntryPosition()`
+therefore clears both wall rows over the opening columns, marks those grid positions walkable, and applies
+the inner walls patterns a second time so the two new run ends receive their end tiles. It runs after
+`createEntryPosition()` and again after a grown map redraw.
+
+### `WangsetMapper` - `wangset-mapper.js`
 
 Reads wangset tiles and maps wangids to position names.
 
@@ -634,7 +671,7 @@ bottom-center: [0,1,0,0,0,0,0,1]
 bottom-right:  [0,0,0,0,0,0,0,1]
 ```
 
-**Corner wangids (4 tiles) — different bit pattern:**
+**Corner wangids (4 tiles) - different bit pattern:**
 ```
 top-left:     [0,1,0,1,0,1,0,0]
 top-right:    [0,0,0,1,0,1,0,1]
@@ -650,7 +687,7 @@ this.cTL = cornersPosition['top-left'];
 this.sMC = surroundingTilesPosition['middle-center'];
 ```
 
-### `WallsGenerator.createLayerOuterWalls()` — `walls-generator.js:54`
+### `WallsGenerator.createLayerOuterWalls()` - `walls-generator.js:54`
 
 Similar: calls `mapTilesShortcuts(tilesKey, spotTiles.p, null, '-outer-walls')` → finds wangset `'spot_001-outer-walls'`. Uses `WallsMapper` to determine opposite tile placements, then applies multiple pattern sequences (`OuterWalls`, `OuterWallsMerge`, `Corners`).
 
@@ -658,7 +695,7 @@ Similar: calls `mapTilesShortcuts(tilesKey, spotTiles.p, null, '-outer-walls')` 
 
 ## Stage 3c: Map Grid Generation
 
-After spots, `RandomMapGenerator.generate()` — `random-map-generator.js:207`:
+After spots, `RandomMapGenerator.generate()` - `random-map-generator.js:207`:
 
 ```
 // spots first (can become elements)
@@ -710,7 +747,77 @@ When no candidate passes (or on global fail) the element is NEVER silently dropp
 Contract: `resolve(elementType, elementNumber)` PLACES the rejected element itself (through the normal `placeElementOnMap` path, so the journal and pending queue stay in sync) and returns a boolean; the caller must NOT place again on success. A re-entrant resolve call (a placement triggered while already resolving) goes straight to `autoGrow` so resolution always terminates.
 
 - `moveElements`: removes the most recent movable placed element (journal tracked; elements with change-points or return-point layers and stairs are never moved), clears its tiles from its per-instance layers, requeues it, rebuilds the map grid from the journal (`MapGridBuilder.rebuildGridFromJournal`, replaying free-space marking through `ElementLayerWriter.markFreeSpaceAroundElementAsNotAvailable`), then retries the rejected element. Removed elements are re-placed by `processRequeuedPending()` at the end of `placeElements()`. Falls back to `autoGrow` when moving cannot open a window.
-- `autoGrow`: grows the map BOTTOM only (bottom growth appends flat indexes, so every stored main path index and change/return point record stays valid; growing right would change the row stride and corrupt them), by the rejected footprint height plus free space, border and minimum distance. The grid, ground layer, path layer, all element layers and the border are grown or redrawn consistently (`MapBorderGenerator.redrawBorderForGrownMap`). Limitation: an `entryPosition` is not repositioned on growth - maps with entry positions should set an explicit `mapSize` (a critical log reports this case).
+- `autoGrow`: grows the map BOTTOM only (bottom growth appends flat indexes, so every stored main path index and change/return point record keeps pointing at the same tile; growing right would change the row stride and corrupt them), by the rejected footprint height plus free space, border and minimum distance. The grid, ground layer, path layer, all element layers and the border are grown or redrawn consistently (`MapBorderGenerator.redrawBorderForGrownMap`).
+
+Index stability is not the same as geometric validity. Growth moves the bottom border to a new row, so anything anchored to the old bottom edge is left behind even though its index still resolves. That is why the entry position is cut AFTER `placeElements()`, see "Map size and why the map can grow" below. `growMapBottom()` still logs a critical asking for an explicit `mapSize` when an entry position is set; that advice is now stale for the entry position itself and is kept only as a warning that the map did not fit its estimate.
+
+### Map size and why the map can grow
+
+`MapGridBuilder.setMapSize()` takes the configured `mapSize` when BOTH dimensions are greater than zero, otherwise it calls `calculateMapSizeWithFreeSpace()` (`lib/generator/map-grid-builder.js:48`).
+
+Per element type, with `freeSpaceAround` from `ElementsPlacer.determineElementFreeSpaceAround()`:
+
+```
+freeSpaceCalculated = (freeSpaceTilesQuantity * freeTilesMultiplier + freeSpaceAround * freeSpaceMultiplier)
+    * mapSizeFreeSpaceSidesMultiplier
+totalArea += (element.width + freeSpaceCalculated) * (element.height + freeSpaceCalculated) * quantity
+```
+
+Then, per ground spot that is not `isElement`, `totalArea += spotWidth * spotHeight * quantity`. Finally:
+
+```
+baseSize = max(ceil(sqrt(totalArea)), maxWidth, maxHeight)
+mapWidth = mapHeight = baseSize + minimumDistanceFromBorders * 2
+// plus 1 on each axis when blockMapBorder
+```
+
+### How the estimate balances out
+
+`ceil(sqrt(totalArea))` makes the map a square whose area equals the sum of the computed areas. Two effects pull in opposite directions and neither has been measured:
+
+- the square root assumes perfect packing, which is optimistic, since placement is random position with rejection retries
+- each element contributes a FULL free space margin on every side (`freeSpaceUpDownLeftRight` at line 73). Two adjacent elements share one gap, but the sum counted it twice, so the total is over counted, which is slack
+
+Do not assume the estimate is too small. There is no evidence of that: with the exhaustive scan fallback in `PositionFinder.findPosition()` in place, the whole test suite grows exactly one map, the one deliberately undersized by `testTheMapGrowsOnTheBottomOnlyWhenAnElementDoesNotFit`. Before adding a packing efficiency factor, measure whether real configurations actually reject, otherwise the maps only get bigger for nothing.
+
+What is structurally true regardless: an area based estimate cannot GUARANTEE a packing, so `placeRejectResolver` is a genuine safety net rather than dead code, and with the default `autoGrow` the size is computed once but is not final. An explicit `mapSize` is the only way to fix it, at the cost of a hard placement failure instead of a grow.
+
+Ground spots are counted raw at `map-grid-builder.js:93`, `spotWidth * spotHeight * quantity`, with no free space, while elements get `(w + freeSpace) * (h + freeSpace)` at line 79. That asymmetry is CORRECT, not a gap: `SpotPlacement.findFreeSpotPlacement()` places a spot using only its width and height, and `rectOverlapsAny()` compares raw rectangles, so a spot never claims a free space margin and none should be counted for it. Spots flagged `isElement` are skipped there because they are registered as elements and counted in the element loop instead.
+
+### Invisible spot placement, and its unchecked fallback
+
+`SpotLayersBuilder.generateInvisibleSpots()` (`spot-layers-builder.js:255`) handles only the spots NOT flagged `isElement`; an `isElement` spot is skipped at line 260 and placed through the element path instead, with the free space, safeguard and reject resolver rules that path carries.
+
+It keeps a single `occupiedRects` list (line 257), pushes every placed spot rect into it (line 279) and passes it to `SpotPlacement.findFreeSpotPlacement()`, so as written every invisible spot avoids every other invisible spot. There is no per spot or per type flag anywhere in the ground spot config that permits overlap on this path.
+
+`findFreeSpotPlacement()` tries 30 random positions and, when none is free, returns a random position WITHOUT checking it (`spot-placement.js:25-28`). So on a crowded map the final placement is unvalidated and may overlap. Whether overlapping invisible spots is acceptable depends on the intended design, which is not expressed anywhere in the code; what the code does guarantee is only that the first 30 attempts try to avoid it. Spots do not go through `PlacementRejectResolver`, so there is no grow or retry behind them.
+
+### A rejected placement does not mean the map is full
+
+`PositionFinder.findPosition()` (`lib/generator/position-finder.js:18`) picks a strategy from `placeElementsOrder`, and the two differ in whether a failure is trustworthy:
+
+- `inOrder` calls `findNextAvailablePosition()`, an EXHAUSTIVE first fit scan over every row and column that returns the first fitting spot. A null means the element genuinely fits nowhere, so a grow is justified.
+- `random`, the DEFAULT, calls `findRandomPositionOnAnywhere()`, which is `tryRandomPositions(200, ...)`: 200 random draws and then it gives up. On a crowded map the odds of drawing a valid cell inside 200 tries collapse long before the map is actually full.
+
+So with the default settings a grow is frequently triggered by SAMPLING failure, not by a full map, and the map ends up larger than it needed to be. This is separate from the size estimate above: even a correctly sized map will grow if the sampler misses. `placeElementsCloserToBorders` takes a different path, `findRandomPositionCloserToBorders()`, which tries edge and distributed border positions first and uses `mapWidth * mapHeight` as its try budget instead of 200.
+
+Anything reasoning about why a map grew has to separate the three causes: the estimate being the theoretical minimum, the 200 draw cap in random mode, and the element genuinely not fitting.
+
+Because of that, anything anchored to the map edges must be produced after placement. `RandomMapGenerator.generate()` orders it:
+
+```
+// size computed
+generateEmptyMap(this.mapSize, ...)
+// draws and blocks the border only
+populateCollisionsMapBorder()
+initializeMainPath()
+// the last step that can change mapHeight
+await placeElements()
+// cut against the final size
+createEntryPosition()
+```
+
+`createEntryPosition()` used to run inside `populateCollisionsMapBorder()`, before placement. A grown map then redrew the border over the gap and the recorded change points stayed on the pre grow row, so the interior had no visible door while its return trigger sat on open floor mid room. It emits its layer with `unshift` so the layer keeps its original position in `additionalLayers` regardless of when it runs.
 
 Every successful placement is recorded in `generator.placedElementsJournal` as {elementType, elementNumber, position, width, height, freeSpaceAround, allowPathsInFreeSpace, movable, layerNames}.
 
@@ -779,16 +886,16 @@ SpotGenerator: spotTile = spotTilesShortcuts.p = N  (correct optimized tile ID)
 
 The example configs in `examples/layer-elements-composite/` are **hand-crafted** and bypass the `tileset-to-tilemap` UI tool entirely. Key differences:
 
-- `spotTile` — examples: absent (uses groundTile fallback); UI-generated: absent when null, `0` when set
-- `tilesKey` — examples: explicit string e.g. `'cave'`, shared across multiple spots; UI-generated: normalized spot name e.g. `'spot_001'`, unique per spot
-- `applyCornersTiles` — examples: explicit `true`/`false`; UI-generated: derived from `0 < Object.keys(surroundingTiles).length`
-- `borderInnerWalls` — examples: wangset name string e.g. `'cave-inner-walls'`; UI-generated: boolean `true`/`false`
-- `borderOuterWalls` — examples: wangset name string e.g. `'cave-outer-walls'`; UI-generated: boolean `true`/`false`
-- `wallsLayerSuffix` — examples: present e.g. `'-collisions'`; UI-generated: absent (generator defaults to `''`)
-- `borderLayerSuffix` — examples: present e.g. `'-collisions-over-player'`; UI-generated: absent (generator defaults to `''`)
-- `outerWallsLayerSuffix` — examples: present; UI-generated: absent (generator defaults to `''`)
+- `spotTile` - examples: absent (uses groundTile fallback); UI-generated: absent when null, `0` when set
+- `tilesKey` - examples: explicit string e.g. `'cave'`, shared across multiple spots; UI-generated: normalized spot name e.g. `'spot_001'`, unique per spot
+- `applyCornersTiles` - examples: explicit `true`/`false`; UI-generated: derived from `0 < Object.keys(surroundingTiles).length`
+- `borderInnerWalls` - examples: wangset name string e.g. `'cave-inner-walls'`; UI-generated: boolean `true`/`false`
+- `borderOuterWalls` - examples: wangset name string e.g. `'cave-outer-walls'`; UI-generated: boolean `true`/`false`
+- `wallsLayerSuffix` - examples: present e.g. `'-collisions'`; UI-generated: absent (generator defaults to `''`)
+- `borderLayerSuffix` - examples: present e.g. `'-collisions-over-player'`; UI-generated: absent (generator defaults to `''`)
+- `outerWallsLayerSuffix` - examples: present; UI-generated: absent (generator defaults to `''`)
 
-**`borderInnerWalls` as boolean vs string:** `spot-generator.js` uses `if(groundSpotConfig.borderInnerWalls)` — truthy check only. Both `true` and `'cave-inner-walls'` are truthy. The actual wangset looked up is always `tilesKey + '-inner-walls'`, never `borderInnerWalls` itself.
+**`borderInnerWalls` as boolean vs string:** `spot-generator.js` uses `if(groundSpotConfig.borderInnerWalls)` - truthy check only. Both `true` and `'cave-inner-walls'` are truthy. The actual wangset looked up is always `tilesKey + '-inner-walls'`, never `borderInnerWalls` itself.
 
 **Multiple spots sharing a `tilesKey`:** In dungeon example, `caveRooms`/`caveSingle`/`cavesBig` all use `tilesKey: 'cave'`. This means they all use the same tile annotations from the `cave` tileset (one `PropertiesMapper` for all three spots). In UI flow, each spot gets its own `tilesKey` = normalized spot name.
 
@@ -796,7 +903,7 @@ The example configs in `examples/layer-elements-composite/` are **hand-crafted**
 
 ## Critical Utility Behaviors
 
-### `sc.hasOwn` and `sc.get` with null values — `@reldens/utils/lib/shortcuts.js`
+### `sc.hasOwn` and `sc.get` with null values - `@reldens/utils/lib/shortcuts.js`
 
 ```javascript
 hasOwn(obj, prop) {
@@ -819,16 +926,16 @@ let raw = sc.get(spot, 'width', null);
 let width = (null !== raw && 0 < raw) ? raw : 5;
 ```
 
-### `splitByLayerName` — `tileset-ref` layer is intentionally excluded from `croppedElements`
+### `splitByLayerName` - `tileset-ref` layer is intentionally excluded from `croppedElements`
 
-In `ElementsProvider.splitByLayerName()`, each layer name is split by `-`. Layer names with fewer than 3 parts are skipped with `Logger.error`. The `tileset-ref` layer name has 2 parts (`['tileset', 'ref']`), so it is always excluded from `croppedElements`. This is correct behavior — `tileset-ref` exists solely to ensure annotated tiles survive `TileMapOptimizer`, not to be used as an element for placement.
+In `ElementsProvider.splitByLayerName()`, each layer name is split by `-`. Layer names with fewer than 3 parts are skipped with `Logger.error`. The `tileset-ref` layer name has 2 parts (`['tileset', 'ref']`), so it is always excluded from `croppedElements`. This is correct behavior - `tileset-ref` exists solely to ensure annotated tiles survive `TileMapOptimizer`, not to be used as an element for placement.
 
 ### `elementsProvider.groundSpots` vs config `groundSpots`
 
 These are two different things with the same name:
 
-- `elementsProvider.groundSpots` — `{ spotKey: newTileId }` — tile IDs only, populated by `fetchPathTiles()` from the `groundSpots` tile annotation
-- config `groundSpots` — `{ spotKey: { layerName, tilesKey, width, height, quantity, ... } }` — full placement config, read from `map-generator-config.json`
+- `elementsProvider.groundSpots` - `{ spotKey: newTileId }` - tile IDs only, populated by `fetchPathTiles()` from the `groundSpots` tile annotation
+- config `groundSpots` - `{ spotKey: { layerName, tilesKey, width, height, quantity, ... } }` - full placement config, read from `map-generator-config.json`
 
 `MapDataMapper.fromProvider()` uses `Object.assign(sc.deepJsonClone(props), {...})`. The `groundSpots` key is NOT in the override object, so it comes from the original `props` (the config JSON). If you see `groundSpots` being used for tile ID lookup in `SpotGenerator`, that comes from `elementsProvider.groundSpotsPropertiesMappers`, not from `elementsProvider.groundSpots`.
 
@@ -848,7 +955,7 @@ width: (null !== rawWidth && 0 < rawWidth) ? rawWidth : 5,
 height: (null !== rawHeight && 0 < rawHeight) ? rawHeight : 5,
 ```
 
-`sc.get` uses `hasOwn` internally: it returns the fallback only when the key is absent or `undefined`. A key set to `null` passes `hasOwn` and returns `null`, not the fallback — so the null check is explicit. When `width` or `height` is null or `<= 0`, the fallback of `5` is used, matching the default from `buildDefaultSpot()`.
+`sc.get` uses `hasOwn` internally: it returns the fallback only when the key is absent or `undefined`. A key set to `null` passes `hasOwn` and returns `null`, not the fallback - so the null check is explicit. When `width` or `height` is null or `<= 0`, the fallback of `5` is used, matching the default from `buildDefaultSpot()`.
 
 On the client side, `spot-editor.js` `initNumberSpotProp()` normalizes null number values at render time:
 - When `spot[key]` is null or undefined AND the input has a positive `min` attribute, both `spot[key]` and `el.value` are set to `+el.min`
@@ -856,13 +963,13 @@ On the client side, `spot-editor.js` `initNumberSpotProp()` normalizes null numb
 
 ### Spot Tile Selection and Ground Tile Fallback
 
-When `spot.spotTile = null` (user has not picked a tile), `config.spotTile` is absent from the output of `buildGroundSpotConfig()`. In the generator, `sc.get(groundSpotConfig, 'spotTile', this.groundTile)` returns `this.groundTile` as fallback — the spot is filled with the same tile as the ground. The spot is placed correctly in the layer, but it is visually indistinguishable from the surrounding terrain. Always pick a spot tile when the spot needs to be visually distinct from the ground.
+When `spot.spotTile = null` (user has not picked a tile), `config.spotTile` is absent from the output of `buildGroundSpotConfig()`. In the generator, `sc.get(groundSpotConfig, 'spotTile', this.groundTile)` returns `this.groundTile` as fallback - the spot is filled with the same tile as the ground. The spot is placed correctly in the layer, but it is visually indistinguishable from the surrounding terrain. Always pick a spot tile when the spot needs to be visually distinct from the ground.
 
 ---
 
-## Stage 3d: `generateLayersList()` — Assembling the Final Layer Stack
+## Stage 3d: `generateLayersList()` - Assembling the Final Layer Stack
 
-**Entry:** `RandomMapGenerator.generateLayersList()` — `random-map-generator.js:375`
+**Entry:** `RandomMapGenerator.generateLayersList()` - `random-map-generator.js:375`
 
 Called after all element/path generation is complete. Assembles `staticLayers` then filters/merges into final layer array.
 
@@ -886,7 +993,7 @@ generateLayersList()
   → applyLayersIds(layers)
 ```
 
-### `SpotGenerator.generateInvisibleSpots()` — `spot-generator.js:190`
+### `SpotGenerator.generateInvisibleSpots()` - `spot-generator.js:190`
 
 ```javascript
 invisibleSpotsKeys = Object.keys(generatedSpots).filter(
@@ -909,11 +1016,11 @@ for each spotKey in invisibleSpotsKeys:
 ```
 
 **Requirements for spot to appear:**
-- `generatedSpots[spotKey].isElement` must be `false` — if `true`, placed as element not invisible spot
-- `generatedSpots[spotKey].depth` must be falsy — if truthy, placed with depth ordering
-- `groundSpotConfig.spotLayers` must exist and be non-empty — populated by `generateSpots()`
-- `groundSpotConfig.width > 0` and `groundSpotConfig.height > 0` — if either is 0 or null, the loop bounds fail: `(mapWidth - 0)` gives full range but inner loop `for y=0; y < 0` never executes
-- `spotLayerData` must have at least one non-zero entry — if the spot layer is all zeros the layer passes placement but is filtered out by the empty-layer filter
+- `generatedSpots[spotKey].isElement` must be `false` - if `true`, placed as element not invisible spot
+- `generatedSpots[spotKey].depth` must be falsy - if truthy, placed with depth ordering
+- `groundSpotConfig.spotLayers` must exist and be non-empty - populated by `generateSpots()`
+- `groundSpotConfig.width > 0` and `groundSpotConfig.height > 0` - if either is 0 or null, the loop bounds fail: `(mapWidth - 0)` gives full range but inner loop `for y=0; y < 0` never executes
+- `spotLayerData` must have at least one non-zero entry - if the spot layer is all zeros the layer passes placement but is filtered out by the empty-layer filter
 
 ### Empty Layer Filter
 
@@ -931,11 +1038,11 @@ A spot layer with all-zero data (because `width/height` was 0/null at `createSpo
 
 ---
 
-## TileMapOptimizer In-Place Mutation — Critical Behavior
+## TileMapOptimizer In-Place Mutation - Critical Behavior
 
 **File:** `tile-map-optimizer/lib/tile-map-optimizer.js`
 
-`TileMapOptimizer` receives `originalJSON: this.tileMapJSON` and immediately sets `this.newJSON = this.originalJSON` — **same reference, NOT a clone**.
+`TileMapOptimizer` receives `originalJSON: this.tileMapJSON` and immediately sets `this.newJSON = this.originalJSON` - **same reference, NOT a clone**.
 
 `createNewJSON()` then modifies `this.newJSON.layers[i].data[j]` in-place. Because `newJSON === originalJSON === elementsProvider.tileMapJSON`, after `optimizeMap()` returns:
 
@@ -959,7 +1066,7 @@ Similarly, `croppedElements` for all element layers contain optimized GIDs alrea
 
 ---
 
-## Validation Flow — Why `groundTile=0` Does Not Block Generation
+## Validation Flow - Why `groundTile=0` Does Not Block Generation
 
 **File:** `tile-map-generator/lib/validator/options-validator.js:55`
 
@@ -974,7 +1081,7 @@ if(!sc.get(options, 'groundTile')){
 
 1. The composite's terrain tileset annotates tile id=41 (GID=42) with `key: "groundTile"` property
 2. `fetchPathTiles()` reads the OPTIMIZED tileset's `tiles[]`. For this tile: `newTileId = 1 + (newImagesPositions[42] - 1) = newImagesPositions[42]`
-3. `elementsProvider.groundTile = newImagesPositions[42]` — a non-zero position in the optimized tileset
+3. `elementsProvider.groundTile = newImagesPositions[42]` - a non-zero position in the optimized tileset
 4. `MapDataMapper.fromProvider()` overrides `groundTile: elementsProvider.groundTile` with this non-zero value
 5. `validate()` sees a non-zero `groundTile` → passes ✓
 
@@ -982,7 +1089,7 @@ if(!sc.get(options, 'groundTile')){
 
 ---
 
-## MapsWizardConfigBuilder — `tileOptions` Flattening
+## MapsWizardConfigBuilder - `tileOptions` Flattening
 
 **File:** `tileset-to-tilemap/lib/maps-wizard-config-builder.js:32`
 
@@ -1015,42 +1122,42 @@ This is critical: `map-generator-config.json` stores tile options nested under `
 ## Key File Reference
 
 ### tileset-to-tilemap package
-- `tileset-to-tilemap/lib/routes/generate.js` — `GenerateRoute.handle()` — server endpoint called by the UI generate button; reads `req.body.{tilesets, fullTilesets, sessionId, mapName, mapTitle, globalTileOptions}` and delegates to `TilesetFilesBuilder.build()`
-- `tileset-to-tilemap/lib/tileset-files-builder.js` — `build()`, `buildCompositeEntries()`, `buildTilesetFilesEntries()`, `buildElementFiles()` — main file-generation orchestrator; iterates `tilesets` (serialized from UI state including `tileset.spots[]`); skips elements with `type === 'spot'` in `buildElementFiles()` since spots use the config path not the element-JSON path
-- `tileset-to-tilemap/lib/composite-builder.js` — `buildCompositeJSON()`, `createTilesetEntry()`, `buildVariationLayers()`, `buildElementLayers()`
-- `tileset-to-tilemap/lib/composite-annotation-resolver.js` — `resolve()`, `resolvePathTileCompositeId()`, `applyMergedToEffective()`, `applyGlobalAsDefault()`
+- `tileset-to-tilemap/lib/routes/generate.js` - `GenerateRoute.handle()` - server endpoint called by the UI generate button; reads `req.body.{tilesets, fullTilesets, sessionId, mapName, mapTitle, globalTileOptions}` and delegates to `TilesetFilesBuilder.build()`
+- `tileset-to-tilemap/lib/tileset-files-builder.js` - `build()`, `buildCompositeEntries()`, `buildTilesetFilesEntries()`, `buildElementFiles()` - main file-generation orchestrator; iterates `tilesets` (serialized from UI state including `tileset.spots[]`); skips elements with `type === 'spot'` in `buildElementFiles()` since spots use the config path not the element-JSON path
+- `tileset-to-tilemap/lib/composite-builder.js` - `buildCompositeJSON()`, `createTilesetEntry()`, `buildVariationLayers()`, `buildElementLayers()`
+- `tileset-to-tilemap/lib/composite-annotation-resolver.js` - `resolve()`, `resolvePathTileCompositeId()`, `applyMergedToEffective()`, `applyGlobalAsDefault()`
 - `tileset-to-tilemap/lib/composite-wangset-builder.js` - `buildSpotWangsets()`, `appendSpotWangsets()`, `buildWangset()`, `buildWangtiles()`; the wangid tables live in `TilesetConst.SPOT_SURROUNDING_WANGIDS` and `TilesetConst.SPOT_CORNER_WANGIDS`
-- `tileset-to-tilemap/lib/composite-tile-annotation-builder.js` — `buildTileAnnotations()`, `addSpotAnnotations()`, `collectAnnotatedFlatIds()`
-- `tileset-to-tilemap/lib/tileset-composite-config-builder.js` — `buildConfigData()`, `buildGroundSpotConfig()`, `buildTilesetData()`
-- `tileset-to-tilemap/lib/maps-wizard-config-builder.js` — `buildPartialGeneratorData()` — server-side builder that converts `map-generator-config.json` into `{strategy, partialData}` for the Maps Wizard API; extracts `groundSpots` from config and includes it in `partialData`
+- `tileset-to-tilemap/lib/composite-tile-annotation-builder.js` - `buildTileAnnotations()`, `addSpotAnnotations()`, `collectAnnotatedFlatIds()`
+- `tileset-to-tilemap/lib/tileset-composite-config-builder.js` - `buildConfigData()`, `buildGroundSpotConfig()`, `buildTilesetData()`
+- `tileset-to-tilemap/lib/maps-wizard-config-builder.js` - `buildPartialGeneratorData()` - server-side builder that converts `map-generator-config.json` into `{strategy, partialData}` for the Maps Wizard API; extracts `groundSpots` from config and includes it in `partialData`
 
 ### tile-map-optimizer package
-- `tile-map-optimizer/lib/tile-map-optimizer.js` — `optimize()`, `parseJSON()`, `createThumbsFromLayersData()`, `createNewJSON()`, `fetchNewImagePositionForTile()`
+- `tile-map-optimizer/lib/tile-map-optimizer.js` - `optimize()`, `parseJSON()`, `createThumbsFromLayersData()`, `createNewJSON()`, `fetchNewImagePositionForTile()`
 
 ### tile-map-generator package
-- `tile-map-generator/lib/random-map-generator.js` — `fromElementsProvider()`, `generate()`, `mapTilesShortcuts()`, `setOptions()`
-- `tile-map-generator/lib/generator/elements-provider.js` — `splitElements()`, `optimizeMap()`, `fetchPathTiles()`, `splitByLayerName()`, `cropMapToMinimumArea()`
-- `tile-map-generator/lib/map/data-mapper.js` — `fromProvider()` — merges `deepClone(props)` (retains original `groundSpots` full config) with provider data overrides (adds `groundSpotsPropertiesMappers` from ElementsProvider); `groundSpots` intentionally NOT taken from `elementsProvider.groundSpots` (which is `{spotKey: tileId}` not config)
-- `tile-map-generator/lib/map/tiles-shortcuts.js` — `fromPropertiesMappersList()`, `mapWangsetData()`, `fetchWangsetByName()`, constructor
-- `tile-map-generator/lib/map/wangset-mapper.js` — `mapPositionsFromWangset()`, `fetchTopCenterTile()`, constructor
-- `tile-map-generator/lib/generator/properties-mapper.js` — `map()`, `mapSurroundingByKey()`, `mapCornersByKey()`, `mapSurroundingByPosition()`, `mapCornersByPosition()`
-- `tile-map-generator/lib/generator/spot-generator.js` — `generateSpots()`, `createSpotLayerData()`, `generateInvisibleSpots()`, `saveLayerElements()`, `createVariationsLayer()`
-- `tile-map-generator/lib/generator/walls-generator.js` — `createLayerInnerWalls()`, `createLayerOuterWalls()`, `determineWallTiles()`, `placeWallTiles()`
-- `tile-map-generator/lib/generator/path-connector.js` — `connectPaths()`, `placeMainPath()`
-- `tile-map-generator/lib/loader/layer-elements-composite-loader.js` — `load()` — loads `mapData` from `props.mapData` (form submission data), loads composite JSON from `compositeElementsFile`, sets `mapData.tileMapJSON`
-- `tile-map-generator/lib/loader/layer-elements-object-loader.js` — `load()` — alternative loader for `elements-object-loader` strategy; loads `mapData` + `layerElements` from files; does NOT use ElementsProvider, does NOT build `groundSpotsPropertiesMappers`
+- `tile-map-generator/lib/random-map-generator.js` - `fromElementsProvider()`, `generate()`, `mapTilesShortcuts()`, `setOptions()`
+- `tile-map-generator/lib/generator/elements-provider.js` - `splitElements()`, `optimizeMap()`, `fetchPathTiles()`, `splitByLayerName()`, `cropMapToMinimumArea()`
+- `tile-map-generator/lib/map/data-mapper.js` - `fromProvider()` - merges `deepClone(props)` (retains original `groundSpots` full config) with provider data overrides (adds `groundSpotsPropertiesMappers` from ElementsProvider); `groundSpots` intentionally NOT taken from `elementsProvider.groundSpots` (which is `{spotKey: tileId}` not config)
+- `tile-map-generator/lib/map/tiles-shortcuts.js` - `fromPropertiesMappersList()`, `mapWangsetData()`, `fetchWangsetByName()`, constructor
+- `tile-map-generator/lib/map/wangset-mapper.js` - `mapPositionsFromWangset()`, `fetchTopCenterTile()`, constructor
+- `tile-map-generator/lib/generator/properties-mapper.js` - `map()`, `mapSurroundingByKey()`, `mapCornersByKey()`, `mapSurroundingByPosition()`, `mapCornersByPosition()`
+- `tile-map-generator/lib/generator/spot-generator.js` - `generateSpots()`, `createSpotLayerData()`, `generateInvisibleSpots()`, `saveLayerElements()`, `createVariationsLayer()`
+- `tile-map-generator/lib/generator/walls-generator.js` - `createLayerInnerWalls()`, `createLayerOuterWalls()`, `determineWallTiles()`, `placeWallTiles()`
+- `tile-map-generator/lib/generator/path-connector.js` - `connectPaths()`, `placeMainPath()`
+- `tile-map-generator/lib/loader/layer-elements-composite-loader.js` - `load()` - loads `mapData` from `props.mapData` (form submission data), loads composite JSON from `compositeElementsFile`, sets `mapData.tileMapJSON`
+- `tile-map-generator/lib/loader/layer-elements-object-loader.js` - `load()` - alternative loader for `elements-object-loader` strategy; loads `mapData` + `layerElements` from files; does NOT use ElementsProvider, does NOT build `groundSpotsPropertiesMappers`
 
 ### reldens/src admin UI
-- `src/lib/admin/server/subscribers/maps-wizard-subscriber.js` — handles POST `/maps-wizard`; reads `req.body.generatorData` → `sc.toJson()` → `mapData`; handles GET `/api/session-wizard-config` (reads `map-generator-config.json`, calls `MapsWizardConfigBuilder.buildPartialGeneratorData()`, returns `{strategy, partialData}`)
-- `src/lib/admin/server/subscribers/maps-wizard-runner.js` — `MapsWizardRunner.run()` — routes to `LayerElementsCompositeLoader` + `generator.fromElementsProvider()` for `elements-composite-loader` strategy
-- `src/theme/admin/js/tileset-to-tilemap/tileset-generator.js` — `TilesetGenerator.generate()`, `serializeTileset()`, `runGenerate()` — client-side; `serializeTileset()` includes `spots: tileset.spots || []` in the POST body; fires POST to `generate` endpoint
-- `src/theme/admin/js/tileset-to-tilemap/state-builder.js` — `StateBuilder.buildTileset()` — loads spots from session data as `tilesetData.spots || []` with no normalization; old sessions may have `width: null, height: null` on spot objects
-- `src/theme/admin/js/tileset-to-tilemap/spot-editor.js` — `TilesetSpotEditor.appendSpotRow()`, `initSpotProps()`, `initNumberSpotProp()` — renders spot rows in the legend panel; `initNumberSpotProp()` fixes null number props at render time using the input's `min` attribute as the default value
-- `src/theme/admin/js/tileset-to-tilemap/tileset-tile-options-binder.js` — `TilesetTileOptionsBinder.buildDefaultSpot()`, `addSpot()`, `removeSpot()` — creates new spots with `width: 5, height: 5` defaults; manages spot add/remove and canvas pick state
-- `src/theme/admin/js/tileset-to-tilemap/tileset-spot-props-binder.js` — `TilesetSpotPropsBinder` — binds `change` event listeners to spot prop inputs; does NOT initialize values at load time (that is done by `spot-editor.js`)
-- `src/theme/admin/js/tileset-to-tilemap/tileset-tile-options-pick-handler.js` — `TilesetTileOptionsPickHandler.handleSpotTilePick()` — sets `spot.spotTile = flatIndex` (0-based tileset-local index) when user clicks a tile in the canvas; `flatIndex = row * tileset.tilesetColumns + col`
-- `src/theme/admin/js/maps-wizard/maps-wizard-utils.js` — `buildGeneratorData()`, `fillInputsFromData()`, `updateGeneratorDataFromInputs()`, `updateInputsFromGeneratorData()`, `setExtraProperties()` — utility functions for the Maps Wizard form; `extraProperties` module variable preserves properties with no matching form input
-- `src/theme/admin/js/maps-wizard/maps-wizard-bindings.js` — Maps Wizard event bindings and session auto-load; calls `setExtraProperties()` before `fillInputsFromData()` when loading tileset session config
+- `src/lib/admin/server/subscribers/maps-wizard-subscriber.js` - handles POST `/maps-wizard`; reads `req.body.generatorData` → `sc.toJson()` → `mapData`; handles GET `/api/session-wizard-config` (reads `map-generator-config.json`, calls `MapsWizardConfigBuilder.buildPartialGeneratorData()`, returns `{strategy, partialData}`)
+- `src/lib/admin/server/subscribers/maps-wizard-runner.js` - `MapsWizardRunner.run()` - routes to `LayerElementsCompositeLoader` + `generator.fromElementsProvider()` for `elements-composite-loader` strategy
+- `src/theme/admin/js/tileset-to-tilemap/tileset-generator.js` - `TilesetGenerator.generate()`, `serializeTileset()`, `runGenerate()` - client-side; `serializeTileset()` includes `spots: tileset.spots || []` in the POST body; fires POST to `generate` endpoint
+- `src/theme/admin/js/tileset-to-tilemap/state-builder.js` - `StateBuilder.buildTileset()` - loads spots from session data as `tilesetData.spots || []` with no normalization; old sessions may have `width: null, height: null` on spot objects
+- `src/theme/admin/js/tileset-to-tilemap/spot-editor.js` - `TilesetSpotEditor.appendSpotRow()`, `initSpotProps()`, `initNumberSpotProp()` - renders spot rows in the legend panel; `initNumberSpotProp()` fixes null number props at render time using the input's `min` attribute as the default value
+- `src/theme/admin/js/tileset-to-tilemap/tileset-tile-options-binder.js` - `TilesetTileOptionsBinder.buildDefaultSpot()`, `addSpot()`, `removeSpot()` - creates new spots with `width: 5, height: 5` defaults; manages spot add/remove and canvas pick state
+- `src/theme/admin/js/tileset-to-tilemap/tileset-spot-props-binder.js` - `TilesetSpotPropsBinder` - binds `change` event listeners to spot prop inputs; does NOT initialize values at load time (that is done by `spot-editor.js`)
+- `src/theme/admin/js/tileset-to-tilemap/tileset-tile-options-pick-handler.js` - `TilesetTileOptionsPickHandler.handleSpotTilePick()` - sets `spot.spotTile = flatIndex` (0-based tileset-local index) when user clicks a tile in the canvas; `flatIndex = row * tileset.tilesetColumns + col`
+- `src/theme/admin/js/maps-wizard/maps-wizard-utils.js` - `buildGeneratorData()`, `fillInputsFromData()`, `updateGeneratorDataFromInputs()`, `updateInputsFromGeneratorData()`, `setExtraProperties()` - utility functions for the Maps Wizard form; `extraProperties` module variable preserves properties with no matching form input
+- `src/theme/admin/js/maps-wizard/maps-wizard-bindings.js` - Maps Wizard event bindings and session auto-load; calls `setExtraProperties()` before `fillInputsFromData()` when loading tileset session config
 
 ---
 
@@ -1146,12 +1253,12 @@ The conditional on `!hasCorners` prevents ambiguity when real corner tiles are d
 
 For a spot named `spot_001` with `spot.spotTile = N` to generate correctly, the optimized tileset MUST have the following `key` annotations on tile N:
 
-- `groundSpots: "spot_001"` — Registers `groundSpots['spot_001'] = N` in `elementsProvider`
-- `key: "spot_001-middle-center"` — Sets `surroundingTiles['0,0'] = N` → `sMC = N` → `p = N` → `spotTile = N`
-- `key: "spot_001-corner-top-left"` — Sets `corners['-1,-1'] = N` → `cornersPosition` non-empty → prevents wangset fallback
-- `key: "spot_001-corner-top-right"` — Sets `corners['-1,1'] = N` → fills TR corner with spot tile
-- `key: "spot_001-corner-bottom-left"` — Sets `corners['1,-1'] = N` → fills BL corner with spot tile
-- `key: "spot_001-corner-bottom-right"` — Sets `corners['1,1'] = N` → fills BR corner with spot tile
+- `groundSpots: "spot_001"` - Registers `groundSpots['spot_001'] = N` in `elementsProvider`
+- `key: "spot_001-middle-center"` - Sets `surroundingTiles['0,0'] = N` → `sMC = N` → `p = N` → `spotTile = N`
+- `key: "spot_001-corner-top-left"` - Sets `corners['-1,-1'] = N` → `cornersPosition` non-empty → prevents wangset fallback
+- `key: "spot_001-corner-top-right"` - Sets `corners['-1,1'] = N` → fills TR corner with spot tile
+- `key: "spot_001-corner-bottom-left"` - Sets `corners['1,-1'] = N` → fills BL corner with spot tile
+- `key: "spot_001-corner-bottom-right"` - Sets `corners['1,1'] = N` → fills BR corner with spot tile
 
 The last four (`corner-*`) are only required when `spot.corners = {}`. When real corner tiles are configured, they replace the synthetic values via their own `key: spot_001-corner-*` annotations on their respective tile IDs.
 

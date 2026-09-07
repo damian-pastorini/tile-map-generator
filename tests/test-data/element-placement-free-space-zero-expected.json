@@ -1,5 +1,6 @@
 {
     "type": "map",
+    "version": "1.10",
     "backgroundcolor": "#000000",
     "compressionlevel": 0,
     "infinite": false,
