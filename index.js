@@ -29,7 +29,7 @@ const { PathFinder } = require('./lib/path-finder/path-finder');
 const { MapCompositeDataSchema } = require('./lib/schemas/map-composite-data-schema');
 const { MapDataSchema } = require('./lib/schemas/map-data-schema');
 const { OptionsValidator } = require('./lib/validator/options-validator');
-const { GeneratedFoldersConstants } = require('./lib/constants');
+const { GeneratedFoldersConstants, MainPathEdgesConstants } = require('./lib/constants');
 
 module.exports = {
     RandomMapGenerator,
@@ -55,5 +55,6 @@ module.exports = {
     MapCompositeDataSchema,
     MapDataSchema,
     OptionsValidator,
-    GeneratedFoldersConstants
+    GeneratedFoldersConstants,
+    MainPathEdgesConstants
 };

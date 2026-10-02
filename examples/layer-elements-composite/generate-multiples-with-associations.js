@@ -29,12 +29,14 @@ class GenerateMultiplesWithAssociations
         let i = 0;
         for(let mapInformation of mapsInformation){
             let {mapName, mapTitle} = mapInformation;
-            let previousGenerator = 0 < i ? this.generators[mapsInformation[i - 1]] : null;
+            let previousGenerator = 0 < i ? this.generators[mapsInformation[i - 1].mapName] : null;
             let previousMainPath = [];
+            let previousMapSize = {};
             if (previousGenerator) {
                 previousMainPath = !previousGenerator.hasAssociatedMap
                     ? previousGenerator.generatedMainPathIndexes
                     : [];
+                previousMapSize = {mapWidth: previousGenerator.mapWidth, mapHeight: previousGenerator.mapHeight};
             }
             let generationOptions = {
                 // @NOTE: this could be replaced by sc.deepJsonClone(tileMapJSON), but I wanted to show that it must be
@@ -51,6 +53,7 @@ class GenerateMultiplesWithAssociations
                 variableTilesPercentage: 15,
                 collisionLayersForPaths: ['change-points', 'collisions'],
                 previousMainPath,
+                previousMapSize,
                 expandElementsSize: 1
             };
             this.generators[mapName] = new RandomMapGenerator();

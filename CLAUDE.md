@@ -45,6 +45,7 @@ Sub-classes do NOT receive the whole generator. Each class receives ONLY the spe
 - Generates multiple interconnected maps with associations
 - Handles map-to-map connections (change-points and return-points)
 - Supports multi-floor dungeons and connected overworld maps
+- Default pair mode mirrors a map main path into the next map; `chainMainPaths: true` links every map to the previous and next ones (entry and exit main paths with change/return points)
 
 **AssociatedMaps** (`lib/generator/associated-maps.js`):
 - Builds the associated sub-maps (floors) and their naming/titles from composite associations
@@ -104,7 +105,13 @@ Sub-classes do NOT receive the whole generator. Each class receives ONLY the spe
 - Orchestrates path connectivity: builds the pathfinding grid, routes element paths, applies surrounding/border tiles and walls
 
 **MainPathGenerator** (`lib/generator/main-path-generator.js`):
-- Generates the main path indexes (random/opposite), places them, and records the default return-point
+- Generates the main path indexes (random/opposite), places them, places the chained exit main path on another edge, and records the default return-point (skipped for linked maps)
+
+**MainPathMirror** (`lib/generator/main-path-mirror.js`):
+- Resolves the edge a main path runs along and mirrors the previous map main path onto the opposite edge (first walkable row/column, fitted to the current map size, with its border cells)
+
+**MainPathLinksWriter** (`lib/generator/main-path-links-writer.js`):
+- For `chainMainPaths`: cuts the entry/exit openings out of the map border and writes the `main-path-links-change-points` layer with `change-point-for-*` and `return-point-*` properties for the previous/next maps
 
 **PathRouter** (`lib/generator/path-router.js`):
 - Finds path-tile positions, sorts them by distance, and routes A* paths between points
@@ -226,6 +233,8 @@ Sub-classes do NOT receive the whole generator. Each class receives ONLY the spe
 ### Constants (`lib/constants.js`)
 
 **GeneratedFoldersConstants**: Shared folder constants (e.g. `OPTIMIZED_SUB_FOLDER`). Exported from the package entry point (`index.js`).
+
+**MainPathEdgesConstants**: Main path edge numbering (`TOP: 0`, `RIGHT: 1`, `BOTTOM: 2`, `LEFT: 3`). Exported from the package entry point (`index.js`).
 
 ## Testing
 

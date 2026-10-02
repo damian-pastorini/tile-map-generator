@@ -642,6 +642,17 @@ points are left on the pre grow row while the border moves to the new bottom.
 Both ends are stamped even when the opening sits against a map corner, so a `left` or `right` entry position
 closes the line on the corner column itself instead of leaving the corner tile with nothing joining it.
 
+### Main path links
+
+`RandomMapGenerator.createMainPathLinks()` runs right after `createEntryPosition()` and only when the map has a
+`previousMapName` (with a `previousMainPath`) or a `nextMapName` (set by `chainMainPaths`). Each opening is the
+main path border row or column cells (the path cells themselves when `isBorderWalkable` is true).
+`MainPathLinksWriter.writeLinks()` clears those cells from the collisions map border, marks them walkable, opens the
+border inner walls below a top opening through `MapBorderWallsDrawer.openWallsBelowTopBorder()`, and returns the
+`main-path-links-change-points` layer data with `change-point-for-{target map}` on every cell and one
+`return-point-for-{target map}` one tile inside the opening middle, facing into the map. The main path edges use
+`MainPathEdgesConstants` (`TOP: 0`, `RIGHT: 1`, `BOTTOM: 2`, `LEFT: 3`), the same numbering the random main path uses.
+
 ### Map border inner walls
 
 `MapBorderWallsDrawer` (`lib/generator/map-border-walls-drawer.js`) owns the walls that hang below the top
@@ -815,6 +826,8 @@ initializeMainPath()
 await placeElements()
 // cut against the final size
 createEntryPosition()
+// chained main path openings (change points and return points)
+createMainPathLinks()
 ```
 
 `createEntryPosition()` used to run inside `populateCollisionsMapBorder()`, before placement. A grown map then redrew the border over the gap and the recorded change points stayed on the pre grow row, so the interior had no visible door while its return trigger sat on open floor mid room. It emits its layer with `unshift` so the layer keeps its original position in `additionalLayers` regardless of when it runs.
