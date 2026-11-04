@@ -14,11 +14,47 @@
  */
 
 const { BaseExpectedMapTest } = require('./base-expected-map-test');
+const { FreeSpaceValidator } = require('../lib/validator/free-space-validator');
 const { FileHandler } = require('@reldens/server-utils');
 const { Logger, sc } = require('@reldens/utils');
 
 class TestElementPlacementConfiguration extends BaseExpectedMapTest
 {
+
+    buildTreesMinimumFreeSpaceConfig(mapName, minimumElementsFreeSpaceAround)
+    {
+        let config = this.applyScenarioDefaults(this.setupBasicConfig(), mapName, 30, 30);
+        delete config.layerElements.house1;
+        delete config.elementsFreeSpaceAround;
+        config.elementsQuantity = {tree: 3};
+        config.minimumElementsFreeSpaceAround = minimumElementsFreeSpaceAround;
+        config.orderElementsBySize = false;
+        config.placeElementsOrder = 'inOrder';
+        config.randomizeQuantities = false;
+        return config;
+    }
+
+    async testMinimumFreeSpaceAppliesWhenNoPerElementValueIsSet()
+    {
+        let testName = 'minimumElementsFreeSpaceAround one separates the trees when no per element value is set';
+        await this.test(testName, async () => {
+            let config = this.buildTreesMinimumFreeSpaceConfig('element-placement-minimum-free-space-one', 1);
+            let map = await this.runPlacementScenario(
+                config,
+                13579,
+                'element-placement-minimum-free-space-one-expected.json',
+                [
+                    {element: 'tree-0', x: 2, y: 2, width: 6, height: 8},
+                    {element: 'tree-1', x: 10, y: 2, width: 6, height: 8},
+                    {element: 'tree-2', x: 18, y: 2, width: 6, height: 8}
+                ],
+                'The minimum free space of one tile must leave a single tile gap between the three trees'
+            );
+            let validation = new FreeSpaceValidator().validateFreeSpaceMinimums(map, config);
+            this.assert(validation.isValid, 'Every tree must keep the minimum free space around it');
+            this.assertEqual(validation.violatedDistances, 0, 'No free space violation is allowed');
+        });
+    }
 
     buildHousesAndTreeConfig(mapName, orderElementsBySize, placeElementsOrder)
     {
@@ -116,9 +152,9 @@ class TestElementPlacementConfiguration extends BaseExpectedMapTest
                 24680,
                 'element-placement-in-order-expected.json',
                 [
-                    {element: 'house1-0', x: 1, y: 1, width: 7, height: 9},
-                    {element: 'house2-0', x: 9, y: 1, width: 7, height: 12},
-                    {element: 'tree-0', x: 17, y: 1, width: 6, height: 8}
+                    {element: 'house1-0', x: 2, y: 2, width: 7, height: 9},
+                    {element: 'house2-0', x: 11, y: 2, width: 7, height: 12},
+                    {element: 'tree-0', x: 20, y: 2, width: 6, height: 8}
                 ],
                 'Input order must place house1 on the first scan position, then house2, then the tree'
             );
@@ -133,9 +169,9 @@ class TestElementPlacementConfiguration extends BaseExpectedMapTest
                 24680,
                 'element-placement-by-size-expected.json',
                 [
-                    {element: 'house1-0', x: 9, y: 1, width: 7, height: 9},
-                    {element: 'house2-0', x: 1, y: 1, width: 7, height: 12},
-                    {element: 'tree-0', x: 17, y: 1, width: 6, height: 8}
+                    {element: 'house1-0', x: 11, y: 2, width: 7, height: 9},
+                    {element: 'house2-0', x: 2, y: 2, width: 7, height: 12},
+                    {element: 'tree-0', x: 20, y: 2, width: 6, height: 8}
                 ],
                 'Ordering by size must give the largest element (house2, 7x13) the first scan position'
             );
@@ -167,12 +203,12 @@ class TestElementPlacementConfiguration extends BaseExpectedMapTest
                 13579,
                 'element-placement-free-space-three-expected.json',
                 [
-                    {element: 'tree-0', x: 1, y: 1, width: 6, height: 8},
-                    {element: 'tree-1', x: 10, y: 1, width: 6, height: 8},
-                    {element: 'tree-2', x: 1, y: 12, width: 6, height: 8}
+                    {element: 'tree-0', x: 4, y: 4, width: 6, height: 8},
+                    {element: 'tree-1', x: 16, y: 4, width: 6, height: 8},
+                    {element: 'tree-2', x: 4, y: 18, width: 6, height: 8}
                 ],
-                'Three tiles free space must keep exactly three tiles between trees at x 1 and 10 and push'
-                    +' the third tree to the next row at y 12'
+                'Three tiles free space must keep six tiles between trees at x 4 and 16 and push'
+                    +' the third tree to the next row at y 18'
             );
         });
     }
@@ -188,9 +224,9 @@ class TestElementPlacementConfiguration extends BaseExpectedMapTest
                     {element: 'house1-0', x: 17, y: 15, width: 7, height: 9},
                     {element: 'house2-0', x: 26, y: 14, width: 7, height: 12},
                     {element: 'house2-1', x: 8, y: 14, width: 7, height: 12},
-                    {element: 'tree-0', x: 19, y: 29, width: 6, height: 8},
-                    {element: 'tree-1', x: 31, y: 2, width: 6, height: 8},
-                    {element: 'tree-2', x: 14, y: 2, width: 6, height: 8}
+                    {element: 'tree-0', x: 20, y: 30, width: 6, height: 8},
+                    {element: 'tree-1', x: 32, y: 3, width: 6, height: 8},
+                    {element: 'tree-2', x: 15, y: 3, width: 6, height: 8}
                 ],
                 'Centered houses must form the exact center grid while the trees scatter on seeded random spots'
             );
@@ -208,9 +244,9 @@ class TestElementPlacementConfiguration extends BaseExpectedMapTest
                     {element: 'house1-0', x: 17, y: 15, width: 7, height: 9},
                     {element: 'house2-0', x: 26, y: 14, width: 7, height: 12},
                     {element: 'house2-1', x: 8, y: 14, width: 7, height: 12},
-                    {element: 'tree-0', x: 2, y: 1, width: 6, height: 8},
-                    {element: 'tree-1', x: 9, y: 1, width: 6, height: 8},
-                    {element: 'tree-2', x: 16, y: 1, width: 6, height: 8}
+                    {element: 'tree-0', x: 3, y: 2, width: 6, height: 8},
+                    {element: 'tree-1', x: 11, y: 2, width: 6, height: 8},
+                    {element: 'tree-2', x: 19, y: 2, width: 6, height: 8}
                 ],
                 'Centered houses must keep the exact same center grid while the trees pack on the first row'
             );
@@ -225,10 +261,10 @@ class TestElementPlacementConfiguration extends BaseExpectedMapTest
                 99999,
                 'element-placement-random-seeded-expected.json',
                 [
-                    {element: 'house1-1', x: 2, y: 7, width: 7, height: 9},
-                    {element: 'house2-3', x: 4, y: 19, width: 7, height: 12},
-                    {element: 'tree-0', x: 20, y: 12, width: 6, height: 8},
-                    {element: 'tree-2', x: 28, y: 27, width: 6, height: 8}
+                    {element: 'house1-1', x: 4, y: 9, width: 7, height: 9},
+                    {element: 'house2-3', x: 11, y: 24, width: 7, height: 12},
+                    {element: 'tree-0', x: 21, y: 13, width: 6, height: 8},
+                    {element: 'tree-2', x: 29, y: 28, width: 6, height: 8}
                 ],
                 'Seeded random placement must reproduce the exact shuffled instance numbers and positions'
             );
@@ -248,10 +284,10 @@ class TestElementPlacementConfiguration extends BaseExpectedMapTest
                 75319,
                 'element-placement-closer-to-borders-expected.json',
                 [
-                    {element: 'house1-0', x: 1, y: 1, width: 7, height: 9},
-                    {element: 'house2-0', x: 30, y: 1, width: 7, height: 12},
-                    {element: 'tree-0', x: 1, y: 12, width: 6, height: 8},
-                    {element: 'tree-1', x: 31, y: 15, width: 6, height: 8}
+                    {element: 'house1-0', x: 2, y: 2, width: 7, height: 9},
+                    {element: 'house2-0', x: 31, y: 2, width: 7, height: 12},
+                    {element: 'tree-0', x: 2, y: 14, width: 6, height: 8},
+                    {element: 'tree-1', x: 32, y: 17, width: 6, height: 8}
                 ],
                 'Placing closer to borders must push the houses and trees onto the border ring positions'
             );
@@ -266,10 +302,11 @@ class TestElementPlacementConfiguration extends BaseExpectedMapTest
                 95173,
                 'element-placement-minimum-distance-expected.json',
                 [
-                    {element: 'house1-0', x: 4, y: 4, width: 7, height: 9},
-                    {element: 'tree-0', x: 12, y: 4, width: 6, height: 8}
+                    {element: 'house1-0', x: 5, y: 5, width: 7, height: 9},
+                    {element: 'tree-0', x: 14, y: 5, width: 6, height: 8}
                 ],
-                'A minimum distance of four must start the scan placement at position four by four'
+                'A minimum distance of four must start the scan placement at position five by five, the'
+                    +' distance plus the one tile free space margin'
             );
         });
     }

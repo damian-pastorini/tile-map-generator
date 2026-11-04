@@ -1,0 +1,133 @@
+name: Publish to npm
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Tag, branch or commit to publish'
+        required: true
+        default: 'master'
+      dist_tag:
+        description: 'npm dist-tag (latest for stable, next for prereleases)'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Validate and pack only, do not publish'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: npm-publish-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Validate, test and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout the released source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Ensure an npm version with trusted publishing support
+        run: |
+          NPM_VERSION=$(npm --version)
+          echo "Runner has npm $NPM_VERSION on node $(node --version)"
+          NPM_MAJOR=${NPM_VERSION%%.*}
+          if [ "$NPM_MAJOR" -lt 11 ]; then
+            npm install -g npm@11
+            echo "Upgraded to npm $(npm --version)"
+          fi
+
+      - name: Read package metadata
+        id: meta
+        run: |
+          PKG_NAME=$(node -p "require('./package.json').name")
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          PKG_PRIVATE=$(node -p "String(require('./package.json').private === true)")
+          echo "name=$PKG_NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$PKG_VERSION" >> "$GITHUB_OUTPUT"
+          echo "private=$PKG_PRIVATE" >> "$GITHUB_OUTPUT"
+          echo "Publishing candidate: $PKG_NAME@$PKG_VERSION"
+
+      - name: Reject private packages
+        if: steps.meta.outputs.private == 'true'
+        run: |
+          echo "::error::${{ steps.meta.outputs.name }} is marked private and must not be published."
+          exit 1
+
+      - name: Check the release tag matches the package version
+        if: github.event_name == 'release'
+        run: |
+          TAG_VERSION="${{ github.event.release.tag_name }}"
+          TAG_VERSION="${TAG_VERSION#v}"
+          if [ "$TAG_VERSION" != "${{ steps.meta.outputs.version }}" ]; then
+            echo "::error::Release tag $TAG_VERSION does not match package.json version ${{ steps.meta.outputs.version }}."
+            exit 1
+          fi
+
+      - name: Check the version is not published yet
+        run: |
+          PUBLISHED=$(npm view "${{ steps.meta.outputs.name }}@${{ steps.meta.outputs.version }}" version --registry=https://registry.npmjs.org/ --prefer-online 2>/dev/null || true)
+          if [ -n "$PUBLISHED" ]; then
+            echo "::error::${{ steps.meta.outputs.name }}@${{ steps.meta.outputs.version }} already exists on npm. Bump the version, published versions are immutable."
+            exit 1
+          fi
+
+      - name: Resolve the dist-tag
+        id: disttag
+        run: |
+          DIST_TAG="${{ github.event.inputs.dist_tag }}"
+          if [ -z "$DIST_TAG" ]; then
+            DIST_TAG="latest"
+            case "${{ steps.meta.outputs.version }}" in
+              *-*) DIST_TAG="next" ;;
+            esac
+          fi
+          echo "value=$DIST_TAG" >> "$GITHUB_OUTPUT"
+          echo "Using dist-tag: $DIST_TAG"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test --if-present
+
+      - name: Pack only (dry run)
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          npm publish --dry-run --access public --tag "${{ steps.disttag.outputs.value }}"
+          echo "Dry run finished, nothing was published."
+
+      - name: Publish to npm with trusted publishing
+        if: github.event.inputs.dry_run != 'true'
+        run: npm publish --access public --tag "${{ steps.disttag.outputs.value }}"
+
+      - name: Confirm the published version
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          for ATTEMPT in 1 2 3 4 5 6; do
+            FOUND=$(npm view "${{ steps.meta.outputs.name }}@${{ steps.meta.outputs.version }}" version --registry=https://registry.npmjs.org/ --prefer-online 2>/dev/null || true)
+            if [ -n "$FOUND" ]; then
+              echo "Confirmed on the registry: ${{ steps.meta.outputs.name }}@$FOUND (dist-tag ${{ steps.disttag.outputs.value }})"
+              exit 0
+            fi
+            echo "Not visible yet, retry $ATTEMPT after $((ATTEMPT * 10))s of registry propagation."
+            sleep $((ATTEMPT * 10))
+          done
+          echo "::warning::Publish reported success but the version is not visible yet. Do NOT republish, it is propagation lag."

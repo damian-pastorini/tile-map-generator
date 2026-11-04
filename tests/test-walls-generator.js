@@ -150,6 +150,79 @@ class TestWallsGenerator extends BaseMapGeneratorTest
         });
     }
 
+    async testIsTopBorderTileRejectsUnresolvedTiles()
+    {
+        await this.test('isTopBorderTile returns false when the tile and the shortcuts are unresolved', async () => {
+            let wallsGenerator = new WallsGenerator(this.buildGeneratorStub());
+            let unresolvedShortcuts = {};
+            this.assertEqual(
+                wallsGenerator.isTopBorderTile(unresolvedShortcuts.cTL, unresolvedShortcuts),
+                false,
+                'An unresolved tile must never match an unresolved shortcut'
+            );
+            this.assertEqual(wallsGenerator.isTopBorderTile(0, unresolvedShortcuts), false);
+            this.assertEqual(wallsGenerator.isTopBorderTile(0, this.buildSpotTilesShortcuts()), false);
+        });
+    }
+
+    async testDetermineWallTilesWithoutResolvedInnerWallsTiles()
+    {
+        await this.test('determineWallTiles returns null when the inner walls tiles are not resolved', async () => {
+            let wallsGenerator = new WallsGenerator(this.buildGeneratorStub());
+            let unresolvedInnerWalls = {};
+            let result = wallsGenerator.determineWallTiles(
+                unresolvedInnerWalls,
+                this.buildSpotTilesShortcuts(),
+                10
+            );
+            this.assertEqual(result, null, 'Unresolved wall tiles must not be placed');
+        });
+    }
+
+    async testCreateLayerInnerWallsWithoutResolvedTiles()
+    {
+        await this.test('createLayerInnerWalls produces an empty layer when nothing resolves', async () => {
+            let wallsGenerator = new WallsGenerator(this.buildWallsGenerator({}));
+            let unresolvedSpot = {};
+            let bordersLayer = Array(16).fill(0);
+            bordersLayer[0] = unresolvedSpot.cTL;
+            let result = wallsGenerator.createLayerInnerWalls(bordersLayer, 'p', unresolvedSpot, 4, 4);
+            this.assertEqual(result.length, 16);
+            this.assertEqual(
+                result.every(tile => 0 === tile),
+                true,
+                'The layer must stay empty instead of being filled with unresolved tiles'
+            );
+        });
+    }
+
+    async placeSingleOuterWallTile(wallsGenerator, width, wallsLayer)
+    {
+        return await wallsGenerator.placeOuterWallTile(
+            Array(width * 4).fill(0),
+            1,
+            0,
+            width,
+            [50],
+            [{x: 0, y: 1}],
+            Array(width * 4).fill(0),
+            wallsLayer
+        );
+    }
+
+    async testPlaceOuterWallTileWithoutInnerWallsLayer()
+    {
+        await this.test('placeOuterWallTile places tiles when there is no inner walls layer', async () => {
+            let wallsGenerator = new WallsGenerator(this.buildGeneratorStub());
+            let result = await this.placeSingleOuterWallTile(wallsGenerator, 4, false);
+            this.assertEqual(
+                result[5],
+                50,
+                'Outer walls must not require an inner walls layer to be placed'
+            );
+        });
+    }
+
     async testDetermineWallTilesNonBorder()
     {
         await this.test('determineWallTiles returns null for non-border tile', async () => {
@@ -175,21 +248,10 @@ class TestWallsGenerator extends BaseMapGeneratorTest
     {
         await this.test('placeOuterWallTile skips positions already filled by walls layer', async () => {
             let wallsGenerator = new WallsGenerator(this.buildGeneratorStub());
-            let width = 4;
-            let outerWallsLayer = Array(width * 4).fill(0);
-            let wallsLayer = Array(width * 4).fill(0);
-            wallsLayer[1 * width + 1] = 7;
-            let result = await wallsGenerator.placeOuterWallTile(
-                outerWallsLayer,
-                1,
-                0,
-                width,
-                [50],
-                [{x: 0, y: 1}],
-                Array(width * 4).fill(0),
-                wallsLayer
-            );
-            this.assertEqual(result[1 * width + 1], 0);
+            let wallsLayer = Array(16).fill(0);
+            wallsLayer[5] = 7;
+            let result = await this.placeSingleOuterWallTile(wallsGenerator, 4, wallsLayer);
+            this.assertEqual(result[5], 0);
         });
     }
 
@@ -210,7 +272,7 @@ class TestWallsGenerator extends BaseMapGeneratorTest
     {
         await this.test('fixInnerWallsPatterns returns nothing for an invalid layer', async () => {
             let wallsGenerator = new WallsGenerator(this.buildWallsGenerator({}));
-            let result = wallsGenerator.fixInnerWallsPatterns([], {}, 4, 2);
+            let result = wallsGenerator.fixInnerWallsPatterns([], {}, 4);
             this.assert(!result, 'Expected no return for invalid layer');
         });
     }
@@ -221,7 +283,7 @@ class TestWallsGenerator extends BaseMapGeneratorTest
             let wallsGenerator = new WallsGenerator(this.buildWallsGenerator({}));
             let shortcuts = {sML: 20, sMC: 22, sMR: 24, cTR: 25, cTL: 21, sTC: 23};
             let layerData = [22, 0, 0, 0, 0, 0, 0, 0];
-            let result = wallsGenerator.fixInnerWallsPatterns(layerData, shortcuts, 4, 2);
+            let result = wallsGenerator.fixInnerWallsPatterns(layerData, shortcuts, 4);
             this.assertEqual(result[0], 20);
             this.assertEqual(result[1], 0);
         });

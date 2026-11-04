@@ -38,24 +38,6 @@ class TestElementLayerWriter extends BaseMapGeneratorTest
         });
     }
 
-    async testProvideReturnPositionKeyFromLayerDefault()
-    {
-        await this.test('provideReturnPositionKeyFromLayer defaults to down', async () => {
-            let writer = new ElementLayerWriter(this.buildGeneratorStub());
-            this.assertEqual(writer.provideReturnPositionKeyFromLayer(null), 'down');
-            this.assertEqual(writer.provideReturnPositionKeyFromLayer({}), 'down');
-        });
-    }
-
-    async testProvideReturnPositionKeyFromLayerProperty()
-    {
-        await this.test('provideReturnPositionKeyFromLayer reads position property', async () => {
-            let writer = new ElementLayerWriter(this.buildGeneratorStub());
-            let layer = {properties: [{name: 'position', value: 'up'}]};
-            this.assertEqual(writer.provideReturnPositionKeyFromLayer(layer), 'up');
-        });
-    }
-
     async testRemoveFloorFromMapNamePlain()
     {
         await this.test('removeFloorFromMapName keeps plain map name', async () => {
@@ -179,22 +161,45 @@ class TestElementLayerWriter extends BaseMapGeneratorTest
         });
     }
 
-    async testUpdateLayerDataReturnPoints()
+    recordReturnPointWithProperties(properties)
     {
-        await this.test('updateLayerData records return points for return-point layers', async () => {
-            let generator = this.buildFullWriterGenerator([{name: 'tree-return-point', data: Array(16).fill(0)}]);
-            let writer = new ElementLayerWriter(generator);
-            let elementData = {
+        let generator = this.buildFullWriterGenerator([{name: 'tree-return-point', data: Array(16).fill(0)}]);
+        let writer = new ElementLayerWriter(generator);
+        writer.updateLayerData(
+            {
                 name: 'tree-return-point',
                 width: 2,
                 height: 1,
                 position: {x: 1, y: 1},
                 data: [0, 8],
-                properties: [],
+                properties,
                 allowPathsInFreeSpace: false
-            };
-            writer.updateLayerData(elementData, 0, {freeSpaceAround: 0}, 'tree');
-            this.assert(generator.generatedReturnPoints['town-01-tree-n0'], 'Expected return point recorded');
+            },
+            0,
+            {freeSpaceAround: 0},
+            'tree'
+        );
+        return generator.generatedReturnPoints['town-01-tree-n0'];
+    }
+
+    async testUpdateLayerDataReturnPoints()
+    {
+        await this.test('updateLayerData records return points for return-point layers', async () => {
+            let returnPoint = this.recordReturnPointWithProperties([]);
+            this.assert(returnPoint, 'Expected return point recorded');
+            this.assertEqual(
+                'down',
+                returnPoint.position,
+                'Without a position property the return point must default to down'
+            );
+        });
+    }
+
+    async testUpdateLayerDataReturnPointPositionProperty()
+    {
+        await this.test('updateLayerData reads the return point position from the layer property', async () => {
+            let returnPoint = this.recordReturnPointWithProperties([{name: 'position', value: 'up'}]);
+            this.assertEqual('up', returnPoint.position);
         });
     }
 

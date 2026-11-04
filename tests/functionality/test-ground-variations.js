@@ -41,6 +41,29 @@ class TestGroundVariations extends BaseFunctionalityTest
         });
     }
 
+    async testGroundVariationsAreDrawnBelowTheMapBorder()
+    {
+        let config = this.setupComplexConfig();
+        let testName = 'the ground variations are drawn below the map border so they can never cover it';
+        await this.testWithDeterministicSeed(testName, config, 44444, async (map) => {
+            let layerNames = map.layers.map(layer => layer.name);
+            let variationsIndex = layerNames.indexOf('ground-variations');
+            let borderIndex = layerNames.indexOf('collisions-map-border');
+            this.assert(
+                -1 !== variationsIndex,
+                'The ground variations layer must exist to prove the order, layers: '+layerNames.join(', ')
+            );
+            this.assert(
+                -1 !== borderIndex,
+                'The map border layer must exist to prove the order, layers: '+layerNames.join(', ')
+            );
+            this.assert(
+                variationsIndex < borderIndex,
+                'The border is painted after the ground variations, otherwise the variations cover the border tiles'
+            );
+        });
+    }
+
     async testVariationPlacementConstraints()
     {
         let config = this.setupComplexConfig();

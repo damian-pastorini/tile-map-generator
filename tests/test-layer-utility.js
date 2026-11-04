@@ -27,40 +27,40 @@ class TestLayerUtility extends BaseMapGeneratorTest
         return map;
     }
 
-    async testFindLayerByName()
+    async testFindLayerByExactName()
     {
         let map = this.buildMap();
-        await this.test('findLayerByName returns the matching layer', async () => {
-            let layer = LayerUtility.findLayerByName(map, 'path');
+        await this.test('findLayer with the exact match mode returns the matching layer', async () => {
+            let layer = LayerUtility.findLayer(map, 'path', 'exact');
             this.assert(layer, 'layer should be found');
             this.assertEqual(layer.name, 'path', 'matched layer name is path');
         });
-        await this.test('findLayerByName returns null when no layer matches', async () => {
-            this.assertEqual(LayerUtility.findLayerByName(map, 'missing'), null, 'no match returns null');
+        await this.test('findLayer with the exact match mode returns null when no layer matches', async () => {
+            this.assertEqual(LayerUtility.findLayer(map, 'missing', 'exact'), null, 'no match returns null');
         });
     }
 
     async testFindLayerByNamePrefix()
     {
         let map = this.buildMap();
-        await this.test('findLayerByNamePrefix returns the first prefixed layer', async () => {
-            let layer = LayerUtility.findLayerByNamePrefix(map, 'tree');
+        await this.test('findLayer with the prefix match mode returns the first prefixed layer', async () => {
+            let layer = LayerUtility.findLayer(map, 'tree', 'prefix');
             this.assertEqual(layer.name, 'tree0-collisions', 'first tree layer returned');
         });
-        await this.test('findLayerByNamePrefix returns null when nothing starts with prefix', async () => {
-            this.assertEqual(LayerUtility.findLayerByNamePrefix(map, 'rock'), null, 'no prefixed layer returns null');
+        await this.test('findLayer with the prefix match mode returns null when nothing matches', async () => {
+            this.assertEqual(LayerUtility.findLayer(map, 'rock', 'prefix'), null, 'no prefixed layer returns null');
         });
     }
 
     async testFindLayersByNamePrefix()
     {
         let map = this.buildMap();
-        await this.test('findLayersByNamePrefix returns all prefixed layers', async () => {
-            let layers = LayerUtility.findLayersByNamePrefix(map, 'tree');
+        await this.test('findLayers with the prefix match mode returns all prefixed layers', async () => {
+            let layers = LayerUtility.findLayers(map, 'tree', 'prefix');
             this.assertEqual(layers.length, 2, 'two tree layers returned');
         });
-        await this.test('findLayersByNamePrefix returns an empty array when none match', async () => {
-            let layers = LayerUtility.findLayersByNamePrefix(map, 'rock');
+        await this.test('findLayers with the prefix match mode returns an empty array when none match', async () => {
+            let layers = LayerUtility.findLayers(map, 'rock', 'prefix');
             this.assertEqual(layers.length, 0, 'no matches returns empty array');
         });
     }
@@ -68,13 +68,17 @@ class TestLayerUtility extends BaseMapGeneratorTest
     async testFindLayersByNameContains()
     {
         let map = this.buildMap();
-        await this.test('findLayersByNameContains returns layers containing the search string', async () => {
-            let layers = LayerUtility.findLayersByNameContains(map, 'collisions');
+        await this.test('findLayers defaults to the contains match mode', async () => {
+            let layers = LayerUtility.findLayers(map, 'collisions');
             this.assertEqual(layers.length, 2, 'two layers contain collisions');
         });
-        await this.test('findLayersByNameContains returns empty array on a map without layers', async () => {
-            let layers = LayerUtility.findLayersByNameContains({}, 'collisions');
+        await this.test('findLayers returns an empty array on a map without layers', async () => {
+            let layers = LayerUtility.findLayers({}, 'collisions');
             this.assertEqual(layers.length, 0, 'missing layers yields empty array');
+        });
+        await this.test('findLayer defaults to the contains match mode and returns the first match', async () => {
+            let layer = LayerUtility.findLayer(map, 'collisions');
+            this.assertEqual(layer.name, 'tree0-collisions', 'first layer containing collisions returned');
         });
     }
 

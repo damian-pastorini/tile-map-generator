@@ -1,13 +1,16 @@
 {
     "name": "@reldens/tile-map-generator",
     "scope": "@reldens",
-    "version": "0.51.0",
+    "version": "0.65.0",
     "description": "Reldens - Tile Map Generator",
     "author": "Damian A. Pastorini",
     "license": "MIT",
     "homepage": "https://github.com/damian-pastorini/tile-map-generator",
     "source": true,
     "main": "index.js",
+    "bin": {
+        "reldens-generate-map": "bin/reldens-generate-map.js"
+    },
     "repository": {
         "type": "git",
         "url": "https://github.com/damian-pastorini/tile-map-generator.git"
@@ -26,12 +29,13 @@
         "url": "https://github.com/damian-pastorini/tile-map-generator/issues"
     },
     "scripts": {
-        "test": "node tests/run.js"
+        "test": "node tests/run.js",
+        "reldens-generate-map": "node bin/reldens-generate-map.js"
     },
     "dependencies": {
-        "@reldens/tile-map-optimizer": "^0.48.0",
-        "@reldens/utils": "^0.57.0",
-        "@reldens/server-utils": "^0.55.0",
+        "@reldens/tile-map-optimizer": "^0.61.0",
+        "@reldens/utils": "^0.66.0",
+        "@reldens/server-utils": "^0.69.0",
         "pathfinding": "0.4.18"
     }
 }

@@ -23,6 +23,63 @@ let spotTilesShortcuts = {
 class TestSpotLayersBuilder extends BaseMapGeneratorTest
 {
 
+    buildSplitBordersElementsData()
+    {
+        return {
+            layerElements: {},
+            elementsQuantity: {},
+            elementsFreeSpaceAround: {},
+            elementsAllowPathsInFreeSpace: {},
+            mapCenteredElements: {}
+        };
+    }
+
+    buildGeneratedLayers()
+    {
+        return {
+            spotLayer: [5, 5, 5, 5],
+            variationsLayer: false,
+            pathLayer: false,
+            bordersLayer: [6, 6, 6, 6],
+            wallsLayer: [7, 7, 7, 7],
+            outerWallsLayer: [8, 8, 8, 8]
+        };
+    }
+
+    async testSaveLayerElementsSplitBordersLayerNaming()
+    {
+        await this.test('saveLayerElements names the split borders layers and skips them when disabled', async () => {
+            let builder = new SpotLayersBuilder(new GeometryCalculator(), null, new LayerDataFactory());
+            let splitConfig = {
+                width: 2,
+                height: 2,
+                freeSpaceAround: 1,
+                allowPathsInFreeSpace: false,
+                splitBordersInLayers: true,
+                wallsLayerSuffix: '-collisions'
+            };
+            let splitData = this.buildSplitBordersElementsData();
+            builder.saveLayerElements('spot-1', splitConfig, this.buildGeneratedLayers(), splitData);
+            this.assertDeepEqual(
+                splitData.layerElements['spot-1'].map(layer => layer.name),
+                ['spot-1', 'spot-1-inner-walls-collisions', 'spot-1-borders', 'spot-1-outer-walls'],
+                'The split borders layers must be named and ordered as the generator contract expects'
+            );
+            let joinedData = this.buildSplitBordersElementsData();
+            builder.saveLayerElements(
+                'spot-1',
+                {width: 2, height: 2, freeSpaceAround: 1, allowPathsInFreeSpace: false},
+                this.buildGeneratedLayers(),
+                joinedData
+            );
+            this.assertEqual(
+                joinedData.layerElements['spot-1'].length,
+                1,
+                'Without splitBordersInLayers only the spot ground layer is emitted'
+            );
+        });
+    }
+
     async testCreateSpotLayerDataFullFill()
     {
         await this.test('createSpotLayerData fills all tiles at full percentage', async () => {
@@ -90,28 +147,12 @@ class TestSpotLayersBuilder extends BaseMapGeneratorTest
         await this.test('saveLayerElements registers element and quantities', async () => {
             let builder = new SpotLayersBuilder(new GeometryCalculator(), null, new LayerDataFactory());
             let config = {width: 2, height: 2, freeSpaceAround: 3, allowPathsInFreeSpace: true, splitBordersInLayers: false};
-            let state = {
-                layerElements: {},
-                elementsQuantity: {},
-                elementsFreeSpaceAround: {},
-                elementsAllowPathsInFreeSpace: {},
-                mapCenteredElements: {}
-            };
-            let result = builder.saveLayerElements(
-                'spot-1',
-                config,
-                [5, 5, 5, 5],
-                false,
-                false,
-                false,
-                false,
-                false,
-                state.layerElements,
-                state.elementsQuantity,
-                state.elementsFreeSpaceAround,
-                state.elementsAllowPathsInFreeSpace,
-                state.mapCenteredElements
-            );
+            let state = this.buildSplitBordersElementsData();
+            let generatedLayers = this.buildGeneratedLayers();
+            generatedLayers.bordersLayer = false;
+            generatedLayers.wallsLayer = false;
+            generatedLayers.outerWallsLayer = false;
+            let result = builder.saveLayerElements('spot-1', config, generatedLayers, state);
             this.assertEqual(result.layerElements['spot-1'].length, 1, 'One layer registered');
             this.assertEqual(result.layerElements['spot-1'][0].name, 'spot-1', 'Layer named after key');
             this.assertEqual(result.elementsQuantity['spot-1'], 1, 'Quantity set to one');
@@ -131,10 +172,7 @@ class TestSpotLayersBuilder extends BaseMapGeneratorTest
                 [],
                 [],
                 spotTilesShortcuts,
-                null,
-                null,
-                9,
-                1
+                {spotBorderAnalyzer: null, spotBordersAndCorners: null, pathTile: 9, pathSize: 1}
             );
             this.assertEqual(result, false, 'Disabled random path yields false');
         });
@@ -154,10 +192,7 @@ class TestSpotLayersBuilder extends BaseMapGeneratorTest
                 emptyBorders,
                 emptySpot,
                 spotTilesShortcuts,
-                analyzer,
-                null,
-                9,
-                1
+                {spotBorderAnalyzer: analyzer, spotBordersAndCorners: null, pathTile: 9, pathSize: 1}
             );
             this.assertEqual(result, false, 'No border tiles yields false');
         });
@@ -185,10 +220,12 @@ class TestSpotLayersBuilder extends BaseMapGeneratorTest
                     bordersLayer,
                     spotLayer,
                     spotTilesShortcuts,
-                    analyzer,
-                    bordersAndCorners,
-                    9,
-                    3
+                    {
+                        spotBorderAnalyzer: analyzer,
+                        spotBordersAndCorners: bordersAndCorners,
+                        pathTile: 9,
+                        pathSize: 3
+                    }
                 );
                 this.assert(result, 'A path layer object is returned');
                 this.assertEqual(result.pathLayer.name, 'path', 'Path layer named path');

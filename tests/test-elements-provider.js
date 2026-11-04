@@ -184,6 +184,50 @@ class TestElementsProvider extends BaseMapGeneratorTest
         });
     }
 
+    async testFetchPathTilesMapsBorderCorners()
+    {
+        await this.test('fetchPathTiles maps the four border corners without polluting the spot mappers', async () => {
+            let provider = new ElementsProvider({tileMapJSON: {layers: []}});
+            provider.optimizedMap = {tilesets: [{firstgid: 1, tiles: [
+                {id: 50, properties: [{name: 'key', value: 'border-top'}]},
+                {id: 51, properties: [{name: 'key', value: 'border-right'}]},
+                {id: 52, properties: [{name: 'key', value: 'border-bottom'}]},
+                {id: 53, properties: [{name: 'key', value: 'border-left'}]},
+                {id: 60, properties: [{name: 'key', value: 'border-top-left'}]},
+                {id: 61, properties: [{name: 'key', value: 'border-top-right'}]},
+                {id: 62, properties: [{name: 'key', value: 'border-bottom-left'}]},
+                {id: 63, properties: [{name: 'key', value: 'border-bottom-right'}]}
+            ]}]};
+            provider.fetchPathTiles();
+            this.assertEqual(provider.bordersTiles['top-left'], 61, 'border-top-left mapped');
+            this.assertEqual(provider.bordersTiles['top-right'], 62, 'border-top-right mapped');
+            this.assertEqual(provider.bordersTiles['bottom-left'], 63, 'border-bottom-left mapped');
+            this.assertEqual(provider.bordersTiles['bottom-right'], 64, 'border-bottom-right mapped');
+            this.assert(
+                !provider.groundSpotsPropertiesMappers['border'],
+                'border keys must not create a spot properties mapper'
+            );
+            this.assertDeepEqual(provider.surroundingTiles, {}, 'border keys must not reach the surrounding tiles');
+            this.assertDeepEqual(provider.corners, {}, 'border keys must not reach the corner tiles');
+        });
+    }
+
+    async testFetchPathTilesKeepsGroundAndPathOutOfTheMappers()
+    {
+        await this.test('fetchPathTiles does not leak the ground and path keys into the mappers', async () => {
+            let provider = new ElementsProvider({tileMapJSON: {layers: []}});
+            provider.optimizedMap = {tilesets: [{firstgid: 1, tiles: [
+                {id: 120, properties: [{name: 'key', value: 'pathTile'}]},
+                {id: 115, properties: [{name: 'key', value: 'groundTile'}]}
+            ]}]};
+            provider.fetchPathTiles();
+            this.assertEqual(provider.pathTile, 121, 'path tile resolved');
+            this.assertEqual(provider.groundTile, 116, 'ground tile resolved');
+            this.assertDeepEqual(provider.surroundingTiles, {}, 'ground and path keys stay out of surrounding tiles');
+            this.assertDeepEqual(provider.corners, {}, 'ground and path keys stay out of corner tiles');
+        });
+    }
+
     async testFetchPathTilesCollectsMultipleGroundTiles()
     {
         await this.test('fetchPathTiles collects multiple ground tiles and resets the single ground tile', async () => {

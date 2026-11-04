@@ -12,12 +12,19 @@ class TestInnerWalls extends BaseMapGeneratorTest
 
     async testSequences()
     {
-        let shortcuts = {sML: 5, sMC: 6, sMR: 7, cTR: 12, cTL: 11, sTC: 3};
+        let shortcuts = {sML: 5, sMC: 6, sMR: 7, cTR: 12, cTL: 11, sTC: 3, sBL: 21, sBC: 22, sBR: 23};
         await this.test('sequences returns a step1 array', async () => {
             let sequences = InnerWalls.sequences(shortcuts);
             this.assert(sequences.step1, 'step1 should exist');
             this.assert(Array.isArray(sequences.step1), 'step1 should be an array');
-            this.assertEqual(sequences.step1.length, 4, 'step1 should hold four patterns');
+            this.assertEqual(sequences.step1.length, 6, 'step1 should hold the caps for the three wall rows');
+        });
+        await this.test('the bottom row caps take the mirrored bottom wall tiles', async () => {
+            let sequences = InnerWalls.sequences(shortcuts);
+            this.assertEqual(sequences.step1[4][0][0], shortcuts.sBC, 'the right end source is sBC');
+            this.assertEqual(sequences.step1[4][1][0], shortcuts.sBL, 'the right end target is sBL');
+            this.assertEqual(sequences.step1[5][0][1], shortcuts.sBC, 'the left end source is sBC');
+            this.assertEqual(sequences.step1[5][1][1], shortcuts.sBR, 'the left end target is sBR');
         });
         await this.test('each step1 pair holds source and target arrays', async () => {
             let sequences = InnerWalls.sequences(shortcuts);

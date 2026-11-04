@@ -137,6 +137,39 @@ class TestPathGenerationConfiguration extends BaseExpectedMapTest
         });
     }
 
+    async testOppositeMainPathMirrorsAnInnerRowPathWithItsBorderOpening()
+    {
+        await this.test('previousMainPath mirrors a blocked border source path onto the opposite inner row', async () => {
+            let sourceMainPath = [
+                {index: 43, x: 13, y: 1},
+                {index: 44, x: 14, y: 1},
+                {index: 45, x: 15, y: 1}
+            ];
+            let oppositeConfig = this.buildPathScenarioConfig(
+                'path-generation-opposite-inner-row',
+                {previousMainPath: sourceMainPath, previousMapSize: {mapWidth: 30, mapHeight: 30}}
+            );
+            let oppositeResult = await this.runExpectedMapScenario(
+                oppositeConfig,
+                11111,
+                'path-generation-opposite-inner-row-expected.json'
+            );
+            this.logPathCounts(oppositeResult.map, oppositeConfig);
+            this.assertDeepEqual(
+                oppositeResult.generator.generatedMainPathIndexes,
+                [{index: 853, x: 13, y: 28}, {index: 854, x: 14, y: 28}, {index: 855, x: 15, y: 28}],
+                'The committed top inner row main path must land on the bottom inner row'
+                    +' - got: '+sc.toJsonString(oppositeResult.generator.generatedMainPathIndexes)
+            );
+            this.assertDeepEqual(
+                oppositeResult.generator.generatedMainPathIndexesBorder,
+                [{index: 883, x: 13, y: 29}, {index: 884, x: 14, y: 29}, {index: 885, x: 15, y: 29}],
+                'The mirrored main path opening must be painted on the bottom border row'
+                    +' - got: '+sc.toJsonString(oppositeResult.generator.generatedMainPathIndexesBorder)
+            );
+        });
+    }
+
     async testPathsAllowedInElementsFreeSpaceMatchExpectedMap()
     {
         await this.test('allowing paths in the tree free space routes the paths through it on the expected map', async () => {

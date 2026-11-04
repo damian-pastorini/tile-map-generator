@@ -198,24 +198,22 @@ class TestAssociatedMaps extends BaseMapGeneratorTest
     {
         await this.test('generateSubMapName uses subMapName property when present', async () => {
             let associatedMaps = new AssociatedMaps();
-            let layer = {name: 'house-001-change-points'};
             let name = associatedMaps.generateSubMapName(
-                layer,
                 {subMapName: 'cave'},
                 'town-01',
-                {elementNumber: 3}
+                {elementNumber: 3},
+                'town-01-house-01-n3'
             );
             this.assertEqual(name, 'town-01-cave-n3');
         });
     }
 
-    async testGenerateSubMapNameFromLayerName()
+    async testGenerateSubMapNameFromChangePointKey()
     {
-        await this.test('generateSubMapName fuses layer name parts when no property', async () => {
+        await this.test('generateSubMapName returns the change point key when no property', async () => {
             let associatedMaps = new AssociatedMaps();
-            let layer = {name: 'house-001-change-points'};
-            let name = associatedMaps.generateSubMapName(layer, {}, 'town-01', {elementNumber: 1});
-            this.assertEqual(name, 'town-01-house-001-n1');
+            let name = associatedMaps.generateSubMapName({}, 'town-01', {elementNumber: 1}, 'town-01-house-01-n1');
+            this.assertEqual(name, 'town-01-house-01-n1');
         });
     }
 
