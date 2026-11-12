@@ -6,6 +6,7 @@
 
 const { BaseMapGeneratorTest } = require('./base-map-generator-test');
 const { MapNaming } = require('../lib/map/map-naming');
+const { FileHandler } = require('@reldens/server-utils');
 
 class TestMapNaming extends BaseMapGeneratorTest
 {
@@ -52,6 +53,51 @@ class TestMapNaming extends BaseMapGeneratorTest
         await this.test('toJsonFileName and toPngFileName append the proper suffix', async () => {
             this.assertEqual(naming.toJsonFileName('town'), 'town.json', 'json suffix appended');
             this.assertEqual(naming.toPngFileName('town'), 'town.png', 'png suffix appended');
+        });
+    }
+
+    async testIsFileNameAcceptsFileNames()
+    {
+        let naming = new MapNaming();
+        await this.test('isFileName accepts the names without folders', async () => {
+            this.assertEqual(naming.isFileName('town-001'), true, 'map name accepted');
+            this.assertEqual(naming.isFileName('town-001.json'), true, 'map file name accepted');
+            this.assertEqual(naming.isFileName('tilesheet.png'), true, 'tile sheet name accepted');
+            this.assertEqual(naming.isFileName('town-001-house-010-n0'), true, 'sub map name accepted');
+        });
+    }
+
+    async testIsFileNameRejectsFolders()
+    {
+        let naming = new MapNaming();
+        await this.test('isFileName rejects the names pointing to another folder', async () => {
+            let parentFolder = '..';
+            this.assertEqual(
+                naming.isFileName(FileHandler.joinPaths(parentFolder, 'outside')),
+                false,
+                'parent folder traversal rejected'
+            );
+            this.assertEqual(naming.isFileName(parentFolder), false, 'parent folder rejected');
+            this.assertEqual(naming.isFileName('folder/map.json'), false, 'sub folder rejected');
+            this.assertEqual(naming.isFileName('/tmp/map.json'), false, 'absolute path rejected');
+            this.assertEqual(
+                naming.isFileName('town/'+parentFolder+'/'+parentFolder+'/outside'),
+                false,
+                'inner traversal rejected'
+            );
+            this.assertEqual(naming.isFileName('%2e%2e%2foutside'), false, 'encoded traversal rejected');
+        });
+    }
+
+    async testIsFileNameRejectsEmptyAndNonStrings()
+    {
+        let naming = new MapNaming();
+        await this.test('isFileName rejects the empty and the non string names', async () => {
+            this.assertEqual(naming.isFileName(''), false, 'empty name rejected');
+            this.assertEqual(naming.isFileName(false), false, 'false rejected');
+            this.assertEqual(naming.isFileName(null), false, 'null rejected');
+            this.assertEqual(naming.isFileName(12), false, 'number rejected');
+            this.assertEqual(naming.isFileName({}), false, 'object rejected');
         });
     }
 
