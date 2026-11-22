@@ -76,6 +76,44 @@ class TestFileOperations extends BaseMapGeneratorTest
         });
     }
 
+    async testWriteCroppedElementsFileWritesInGeneratedFolder()
+    {
+        await this.test('writeCroppedElementsFile writes the element JSON inside the generated folder', async () => {
+            let generatedFolder = FileHandler.joinPaths(this.testDataFolder, 'generated-cropped-elements');
+            FileHandler.remove(generatedFolder);
+            FileHandler.createFolder(generatedFolder);
+            let mapClone = {width: 2, height: 1, layers: [{name: 'house-01', data: [1, 2]}]};
+            let result = FileOperations.writeCroppedElementsFile(generatedFolder, 'house-01', mapClone);
+            this.assertEqual(result, true, 'the element file must be written');
+            this.assertDeepEqual(
+                FileHandler.fetchFileJson(FileHandler.joinPaths(generatedFolder, 'house-01.json')),
+                mapClone,
+                'the written file must hold the cropped element map'
+            );
+            FileHandler.remove(generatedFolder);
+        });
+    }
+
+    async testWriteCroppedElementsFileRejectsKeysWithFolders()
+    {
+        await this.test('writeCroppedElementsFile rejects an element key with folders and writes nothing', async () => {
+            let generatedFolder = FileHandler.joinPaths(this.testDataFolder, 'generated-cropped-escape');
+            let escapedFilePath = FileHandler.joinPaths(this.testDataFolder, 'escaped-element.json');
+            FileHandler.remove(generatedFolder);
+            FileHandler.remove(escapedFilePath);
+            FileHandler.createFolder(generatedFolder);
+            let result = FileOperations.writeCroppedElementsFile(
+                generatedFolder,
+                FileHandler.joinPaths('..', 'escaped-element'),
+                {width: 1, height: 1, layers: []}
+            );
+            this.assertEqual(result, false, 'the element key with folders must be rejected');
+            this.assertEqual(FileHandler.exists(escapedFilePath), false, 'nothing must be written outside the folder');
+            this.assertDeepEqual(FileHandler.readFolder(generatedFolder), [], 'nothing must be written in the folder');
+            FileHandler.remove(generatedFolder);
+        });
+    }
+
 }
 
 module.exports.TestFileOperations = TestFileOperations;

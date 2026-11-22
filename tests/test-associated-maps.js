@@ -59,6 +59,19 @@ class TestAssociatedMaps extends BaseMapGeneratorTest
         };
     }
 
+    async generateTownSubMaps(town, associationsConfig)
+    {
+        let subMaps = {associatedMaps: new AssociatedMaps()};
+        subMaps.result = await subMaps.associatedMaps.generate(
+            town.townMap,
+            town.mainGenerator.mapName,
+            this.examplesCompositeFolder,
+            associationsConfig,
+            town.mainGenerator
+        );
+        return subMaps;
+    }
+
     fetchPathFinderGridFiles(generatedFolder)
     {
         if(!FileHandler.exists(generatedFolder)){
@@ -89,14 +102,9 @@ class TestAssociatedMaps extends BaseMapGeneratorTest
                 this.assertValidMapStructure(town.townMap);
                 let changePointKeys = Object.keys(town.mainGenerator.generatedChangePoints);
                 this.assert(0 < changePointKeys.length, 'The real town generation must record change-points for the doors');
-                let associatedMaps = new AssociatedMaps();
-                let result = await associatedMaps.generate(
-                    town.townMap,
-                    'town-001',
-                    this.examplesCompositeFolder,
-                    town.associationsProperties,
-                    town.mainGenerator
-                );
+                let subMaps = await this.generateTownSubMaps(town, town.associationsProperties);
+                let associatedMaps = subMaps.associatedMaps;
+                let result = subMaps.result;
                 this.assert(false !== result, 'generate must not early-return false when doors are matched');
                 this.assert(sc.isObject(result), 'generate must return the generated sub-maps object');
                 let subMapNames = Object.keys(result);
@@ -118,6 +126,42 @@ class TestAssociatedMaps extends BaseMapGeneratorTest
             } finally {
                 this.restoreMathRandom();
             }
+        });
+    }
+
+    async testGenerateKeepsMainMapFoldersForSubMaps()
+    {
+        let generatedFolder = FileHandler.joinPaths(this.testDataFolder, 'generated-assoc');
+        let otherFolder = FileHandler.joinPaths(this.testDataFolder, 'generated-assoc-other-folder');
+        await this.test('generate keeps the main map folders for the sub-maps on other config folders', async () => {
+            Math.random = this.seedRandom(24680);
+            FileHandler.remove(otherFolder);
+            let town = await this.generateRealTown(generatedFolder, 'town-001');
+            let otherFolders = [
+                {name: 'generatedFolder', value: otherFolder},
+                {name: 'rootFolder', value: otherFolder}
+            ];
+            for(let layer of town.townMap.layers){
+                layer.properties = [...sc.get(layer, 'properties', []), ...otherFolders];
+            }
+            let subMaps = await this.generateTownSubMaps(
+                town,
+                Object.assign({}, town.associationsProperties, {generatedFolder: otherFolder, rootFolder: otherFolder})
+            );
+            this.restoreMathRandom();
+            this.assert(sc.isObject(subMaps.result), 'generate must return the generated sub-maps object');
+            let generatorKeys = Object.keys(subMaps.associatedMaps.generators);
+            this.assert(0 < generatorKeys.length, 'A sub-map generator must be created per matched door');
+            for(let generatorKey of generatorKeys){
+                let subMapGenerator = subMaps.associatedMaps.generators[generatorKey];
+                this.assertEqual(subMapGenerator.generatedFolder, generatedFolder, 'Generated folder: '+generatorKey);
+                this.assertEqual(subMapGenerator.rootFolder, this.examplesCompositeFolder, 'Root: '+generatorKey);
+                this.assert(
+                    FileHandler.exists(FileHandler.joinPaths(generatedFolder, subMapGenerator.mapFileName)),
+                    'The sub-map file must be written in the main map generated folder: '+generatorKey
+                );
+            }
+            this.assertEqual(FileHandler.exists(otherFolder), false, 'Nothing must be written in the other folder');
         });
     }
 

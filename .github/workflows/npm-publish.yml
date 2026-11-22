@@ -106,6 +106,8 @@ jobs:
         run: npm ci
 
       - name: Run tests
+        env:
+          RELDENS_LOG_LEVEL: '9'
         run: npm test --if-present
 
       - name: Pack only (dry run)
@@ -121,13 +123,23 @@ jobs:
       - name: Confirm the published version
         if: github.event.inputs.dry_run != 'true'
         run: |
-          for ATTEMPT in 1 2 3 4 5 6; do
-            FOUND=$(npm view "${{ steps.meta.outputs.name }}@${{ steps.meta.outputs.version }}" version --registry=https://registry.npmjs.org/ --prefer-online 2>/dev/null || true)
-            if [ -n "$FOUND" ]; then
-              echo "Confirmed on the registry: ${{ steps.meta.outputs.name }}@$FOUND (dist-tag ${{ steps.disttag.outputs.value }})"
+          PKG_NAME="${{ steps.meta.outputs.name }}"
+          PKG_VERSION="${{ steps.meta.outputs.version }}"
+          DIST_TAG="${{ steps.disttag.outputs.value }}"
+          ENCODED_NAME=$(printf '%s' "$PKG_NAME" | sed 's|/|%2F|g')
+          for ATTEMPT in $(seq 1 40); do
+            STAMP=$(date +%s%N)
+            VERSION_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -H 'Cache-Control: no-cache' \
+              "https://registry.npmjs.org/$ENCODED_NAME/$PKG_VERSION?cache=$STAMP" || true)
+            TAGGED=$(curl -s -H 'Cache-Control: no-cache' \
+              "https://registry.npmjs.org/-/package/$ENCODED_NAME/dist-tags?cache=$STAMP" \
+              | grep -o "\"$DIST_TAG\":\"[^\"]*\"" | head -n 1 | cut -d'"' -f4 || true)
+            if [ "$VERSION_STATUS" = "200" ] && [ "$TAGGED" = "$PKG_VERSION" ]; then
+              echo "Confirmed on the registry after $ATTEMPT checks: $PKG_NAME@$PKG_VERSION with dist-tag $DIST_TAG."
               exit 0
             fi
-            echo "Not visible yet, retry $ATTEMPT after $((ATTEMPT * 10))s of registry propagation."
-            sleep $((ATTEMPT * 10))
+            echo "Check $ATTEMPT: the version document answered [$VERSION_STATUS], the dist-tag $DIST_TAG points to [${TAGGED:-none}]. Next check in 15s."
+            sleep 15
           done
-          echo "::warning::Publish reported success but the version is not visible yet. Do NOT republish, it is propagation lag."
+          echo "::error::$PKG_NAME@$PKG_VERSION with dist-tag $DIST_TAG was not confirmed on the registry after 10 minutes. Check https://www.npmjs.com/package/$PKG_NAME before releasing again, published versions are immutable."
+          exit 1
