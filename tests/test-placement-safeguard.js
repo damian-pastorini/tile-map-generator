@@ -144,6 +144,28 @@ class TestPlacementSafeguard extends BaseFunctionalityTest
         });
     }
 
+    async testAutoGrowCreatesTheEntryOnTheGrownBottomBorder()
+    {
+        let config = this.buildTinyMapConfig('safeguard-auto-grow-entry', 'autoGrow');
+        config.blockMapBorder = true;
+        config.entryPosition = 'down-middle';
+        config.entryPositionSize = 2;
+        await this.testWithDeterministicSeed('auto grow creates the entry position on the bottom border of the grown map', config, 991144, async (map, usedConfig, generator) => {
+            let entryX = Math.floor(generator.mapWidth / 2) - 1;
+            let bottomRow = generator.mapHeight - 1;
+            let bottomRowStart = bottomRow * generator.mapWidth;
+            let entryLayer = generator.additionalLayers.find(layer => 'return-to-main-map-change-points' === layer.name);
+            this.assert(14 < generator.mapHeight, 'expected the map height to grow beyond the configured 14 rows');
+            this.assert(entryLayer, 'expected the entry position change points layer');
+            for(let entryColumn of [entryX, entryX + 1]){
+                this.assertEqual(generator.groundTile, entryLayer.data[bottomRowStart + entryColumn]);
+                this.assertEqual(0, generator.borderLayer[bottomRowStart + entryColumn]);
+                this.assertEqual(true, generator.mapGrid[bottomRow][entryColumn]);
+            }
+            this.assert(0 !== generator.borderLayer[bottomRowStart + entryX - 2], 'expected the bottom border next to the entry');
+        });
+    }
+
     async testMoveElementsResolvesRejectedPlacements()
     {
         let config = this.buildTinyMapConfig('safeguard-move-elements', 'moveElements');
